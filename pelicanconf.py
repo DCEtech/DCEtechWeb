@@ -1,6 +1,6 @@
 AUTHOR = 'Daniel'
 SITENAME = 'DCEtech'
-SITEURL = 'https://dcetech.github.io/DCEtechHub/'
+SITEURL = 'https://www.danielcejudo.com/'
 
 THEME = 'theme/mytheme'
 PATH = 'content'
