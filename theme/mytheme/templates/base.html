@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="{% block html_lang %}{{ DEFAULT_LANG }}{% endblock html_lang %}">
+<head>
+        {% block head %}
+        <title>{% block title %}{{ SITENAME }}{% endblock title %}</title>
+        <link reel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+        <link rel="stylesheet" href="{{ SITEURL }}/css/custom.css">
+        <link rel="icon" href="{{ SITEURL }}/images/logo.gif" type="image">
+        <meta charset="utf-8" />
+        <meta name="generator" content="Pelican" />
+        {% if FEED_ALL_ATOM %}
+        <link href="{{ FEED_DOMAIN }}/{% if FEED_ALL_ATOM_URL %}{{ FEED_ALL_ATOM_URL }}{% else %}{{ FEED_ALL_ATOM }}{% endif %}" type="application/atom+xml" rel="alternate" title="{{ SITENAME }} Full Atom Feed" />
+        {% endif %}
+        {% if FEED_ALL_RSS %}
+        <link href="{{ FEED_DOMAIN }}/{% if FEED_ALL_RSS_URL %}{{ FEED_ALL_RSS_URL }}{% else %}{{ FEED_ALL_RSS }}{% endif %}" type="application/rss+xml" rel="alternate" title="{{ SITENAME }} Full RSS Feed" />
+        {% endif %}
+        {% if FEED_ATOM %}
+        <link href="{{ FEED_DOMAIN }}/{%if FEED_ATOM_URL %}{{ FEED_ATOM_URL }}{% else %}{{ FEED_ATOM }}{% endif %}" type="application/atom+xml" rel="alternate" title="{{ SITENAME }} Atom Feed" />
+        {% endif %}
+        {% if FEED_RSS %}
+        <link href="{{ FEED_DOMAIN }}/{% if FEED_RSS_URL %}{{ FEED_RSS_URL }}{% else %}{{ FEED_RSS }}{% endif %}" type="application/rss+xml" rel="alternate" title="{{ SITENAME }} RSS Feed" />
+        {% endif %}
+        {% if CATEGORY_FEED_ATOM and category %}
+        <link href="{{ FEED_DOMAIN }}/{% if CATEGORY_FEED_ATOM_URL %}{{ CATEGORY_FEED_ATOM_URL.format(slug=category.slug) }}{% else %}{{ CATEGORY_FEED_ATOM.format(slug=category.slug) }}{% endif %}" type="application/atom+xml" rel="alternate" title="{{ SITENAME }} Categories Atom Feed" />
+        {% endif %}
+        {% if CATEGORY_FEED_RSS and category %}
+        <link href="{{ FEED_DOMAIN }}/{% if CATEGORY_FEED_RSS_URL %}{{ CATEGORY_FEED_RSS_URL.format(slug=category.slug) }}{% else %}{{ CATEGORY_FEED_RSS.format(slug=category.slug) }}{% endif %}" type="application/rss+xml" rel="alternate" title="{{ SITENAME }} Categories RSS Feed" />
+        {% endif %}
+        {% if TAG_FEED_ATOM and tag %}
+        <link href="{{ FEED_DOMAIN }}/{% if TAG_FEED_ATOM_URL %}{{ TAG_FEED_ATOM_URL.format(slug=tag.slug) }}{% else %}{{ TAG_FEED_ATOM.format(slug=tag.slug) }}{% endif %}" type="application/atom+xml" rel="alternate" title="{{ SITENAME }} Tags Atom Feed" />
+        {% endif %}
+        {% if TAG_FEED_RSS and tag %}
+        <link href="{{ FEED_DOMAIN }}/{% if TAG_FEED_RSS_URL %}{{ TAG_FEED_RSS_URL.format(slug=tag.slug) }}{% else %}{{ TAG_FEED_RSS.format(slug=tag.slug) }}{% endif %}" type="application/rss+xml" rel="alternate" title="{{ SITENAME }} Tags RSS Feed" />
+        {% endif %}
+        {% endblock head %}
+</head>
+<body class="{% if (article or category or tag or author) %}article-page{% else %}base-page{% endif %}">
+  <div class ="container">
+     <header class="header">
+         <h1>
+            <a href="{{ SITEURL }}">
+                <img src="{{ SITEURL }}/images/logo.gif" class="is-rounded" width=150px height=150px alt="Logo">
+            </a>
+            <a href="{{ SITEURL }}/">{{ SITENAME }}{% if SITESUBTITLE %} <strong>{{ SITESUBTITLE }}</strong>{% endif %}</a>
+         </h1>
+     </header>
+     <main>
+       <div class="columns-1">
+           {% if not (article or category or tag or author) %}
+           <div class = "column is-7">
+                <div>
+                   <h2 id ="Hi">Hi, I´m Daniel</h2>
+                   <br>
+                  <h4 class="has-text-white">
+                    I am a junior software developer and IT enthusiast living in Spain. I consider myself a curious person,
+                    with a particular interest in technological topics like AI, Big Data, Blockchain, Cybersecurity and
+                    Web Development.
+                    This is my website, where I´ll be sharing insights about these fascinating technologies.
+                  </h4>
+                </div>
+           </div>
+           <div class = "column-1">
+                <div class="sites-list">
+                   <ul>
+                      <li class="GitHub">
+                         <a href="https://github.com/DCEtech" title="DCEtech Github profile">
+                         <img src="{{ SITEURL }}/images/github.png" alt="Logo">Daniel Cejudo Ecehverry on GitHub
+                         </a>
+                      </li>
+                      <li class="linkedin">
+                         <a href="https://www.linkedin.com/in/daniel-cejudo-echeverry/" title="DCEtech Linkedin profile">
+                         <img src="{{ SITEURL }}/images/linkedin.png " alt="Logo">Daniel Cejudo Ecehverry on Linkedin
+                         </a>
+                      </li>
+                      <li class="email">
+                          <a href="" ></a><img src="{{ SITEURL }}/images/mail.png" alt="Logo">DCEtech@danielcejudo.com</a>
+                      </li>
+                   </ul>
+                </div>
+           </div>
+       </div>
+       <div class = "columns-2">
+           <div class  = "column is-3">
+                <div class= "categories">
+                    <h1 id="Categories">Blog categories</h1>
+                    <br>
+                    <div class="box">
+                      <nav id="menu">
+                         <ul>
+                           {% for title, link in MENUITEMS %}
+                              <li><a href="{{ link }}">{{ title }}</a></li>
+                           {% endfor %}
+                           {% if DISPLAY_PAGES_ON_MENU %}
+                              {% for p in pages %}
+                                <li{% if p == page %} class="active"{% endif %}><a href="{{ SITEURL }}/{{ p.url }}">{{ p.title }}</a></li>
+                              {% endfor %}
+                           {% endif %}
+                           {% if DISPLAY_CATEGORIES_ON_MENU %}
+                              {% for cat, null in categories %}
+                                <li{% if cat == category %} class="active"{% endif %}><a href="{{ SITEURL }}/{{ cat.url }}">{{ cat }}</a></li>
+                              {% endfor %}
+                           {% endif %}
+                         </ul>
+                      </nav><!-- /#menu -->
+                    </div>
+                    <br>
+                </div>
+                {% endif %}
+           </div>
+           <div class = "column is-7" id = "resumen">
+                 {% block content %}
+                 {% endblock %}
+           </div>
+       </div>
+     </main>
+     <footer class ="footer">
+         <address id="about" class="vcard body">
+              Proudly powered by <a href="https://getpelican.com/">Pelican</a>,
+              which takes great advantage of <a href="https://www.python.org/">Python</a>.
+         </address><!-- /#about -->
+     </footer><!-- /#contentinfo -->
+  </div>
+</body>
+</html>
+
