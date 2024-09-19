@@ -70,6 +70,7 @@ main {
         display: flex;
         justify-content: flex-start;
         width: 60% !important;
+         flex-direction: column;
     }
 }
 
@@ -120,6 +121,7 @@ main {
         padding: 10px;
         justify-content: flex-start;
         width: 60% !important;
+        flex-direction: column;
     }
 }
 
@@ -268,6 +270,16 @@ h3 img {
 
 .red-text {
     color: red;
+}
+
+.blue-text-l {
+    color: lightblue;
+    font-size: large !important;
+}
+
+.blue-text-s {
+    color: lightblue;
+    font-size: small !important;
 }
 
 .sub-title {
