@@ -4,6 +4,7 @@ Slug: contact
 Save_as: contact.html
 
 <br>
+<br>
 
 <span class="sub-title">
   Email
@@ -23,7 +24,6 @@ You can email me at this address:
 
 I will get you back the soon as possible.
 
-<br>
 <br>
 
 <span class="sub-title">
