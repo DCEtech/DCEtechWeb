@@ -34,7 +34,7 @@
         {% endif %}
         {% endblock head %}
 </head>
-<body class="{% if (article or category or tag or author or pages) %}article-page{% else %}base-page{% endif %}">
+<body class="{% if (article or category or tag or author or page) %}article-page{% else %}base-page{% endif %}">
   <div class ="container">
      <header class="header">
          <h1>
@@ -46,7 +46,7 @@
      </header>
      <main>
        <div class="columns-1">
-           {% if not (article or category or tag or author or pages) %}
+           {% if not (article or category or tag or author or page) %}
            <div class = "column is-7">
                 <div>
                    <h2 id ="Hi">Hi, I´m Daniel</h2>
