@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+          <title>DCEtech - That´s Why I love Data! - F1 Telemetry Analysis</title>
+        <link reel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+        <link rel="stylesheet" href="./css/custom.css">
+        <link rel="icon" href="./images/logo.gif" type="image">
+        <meta charset="utf-8" />
+        <meta name="generator" content="Pelican" />
+
+
+
+
+    <meta name="tags" content="dataAnalysis" />
+    <meta name="tags" content="dataVisualization" />
+    <meta name="tags" content="f1" />
+    <meta name="tags" content="blog" />
+
+</head>
+<body class="article-page">
+  <div class ="container">
+     <header class="header">
+         <h1>
+            <a href=".">
+                <img src="./images/logo.gif" class="is-rounded" width=150px height=150px alt="Logo">
+            </a>
+            <a href="./">DCEtech</a>
+         </h1>
+     </header>
+     <main>
+       <div class="columns-1">
+           </div>
+           <div class = "column is-7" id = "resumen">
+<section id="content" class="body">
+  <header class="article">
+    <h2 id="entrytitle">
+      <a href="./that-s-why-i-love-data-f1-telemetry-analysis.html" rel="bookmark"
+         title="Permalink to That´s Why I love Data! - F1 Telemetry Analysis">That´s Why I love Data! - F1 Telemetry Analysis</a></h2>
+ 
+  </header>
+  <br>
+  <footer class="post-info">
+    <time class="published" datetime="2024-09-24T00:00:00+02:00">
+      24/09/2024
+    </time>
+ <br>
+    <address class="vcard author">
+      By           <a class="url fn" href="./author/daniel.html">Daniel</a>
+    </address>
+ &nbsp
+    <div class="category">
+      Category: <a href="./category/data.html">Data</a>
+    </div>
+ &nbsp
+    <div class="tags">
+      Tags:<a href="./tag/dataanalysis.html">dataAnalysis</a><a href="./tag/datavisualization.html">dataVisualization</a><a href="./tag/f1.html">f1</a><a href="./tag/blog.html">blog</a>    </div>
+  </footer><!-- /.post-info -->
+  <br>
+  <div class="entry-content">
+    <p><br></p>
+<p>When I saw the incredible overtake by Piastri on Leclerc, I started imagining how all this data could be analyzed. In F1, 
+this data has a specific name: it´s called telemetry, if you are not familiar with telemetry, let me explain: 
+it captures data about the drivers' actions, such as how much they accelerate, brake and their speeds. 
+With this information, we can compare the performances with two different drivers and see the distinct driving styles.  </p>
+<p><br></p>
+<p><img alt="img.png" src="./images/piastri-leclerc.png"></p>
+<p><br></p>
+<p><span class="sub-title">
+  Where can I get the F1 data?
+</span></p>
+<p><br></p>
+<p><img alt="img.png" src="./images/AzerbaijanGP.png"></p>
+<p><br></p>
+<p>Of course, I found a Python library that allows you to download all the F1 data race weekends, it´s called fastf1, this 
+library provides telemetry for both qualifying sessions and race. To analyze the data I use one of my favorite Python 
+libraries: MatplotLib. </p>
+<p><br></p>
+<p><span class="sub-title"> 
+  A simple script for analyzing data:
+</span></p>
+<p><br></p>
+<p>Now. Let´s look at how we can create a simple Python script to view telemetry data. I´ll show you two types of
+telemetries: the race telemetry and the overtake lap telemetry.</p>
+<p><br></p>
+<p>First create a Python project and within it, a directory named: cache. Then, import the necessary Python libraries:
+fastf1 and MatplotLib: </p>
+<p><br></p>
+<p><img alt="img.png" src="./images/import.png"></p>
+<p><br></p>
+<p>Configure ff1 graphics. We'll save the data in the directory we created earlier and load the race data into it.
+Store all the race data in a variable named laps_r:</p>
+<p><br></p>
+<p><img alt="img.png" src="./images/code.png"></p>
+<p><br></p>
+<p>Now, let´s compare the full race telemetry for Piastri and Leclerc:</p>
+<p><br></p>
+<p><img alt="img.png" src="./images/code1.png"></p>
+<p><br></p>
+<p>Output: </p>
+<p><br></p>
+<p><img alt="img.png" src="./images/Race.png"></p>
+<p><br></p>
+<p>The code and the graphics look great, but what are they telling us? </p>
+<p><br></p>
+<p>It´s simple: these two lines represents the lap times over the course of the race. The orange line shows Piastri´s
+lap times, while the green line shows Leclerc's. Throughout the race, you can see the closely they fought, with very 
+similar times. However, in the final laps, Leclerc´s performance starts to drop, possibly due to tire wear.</p>
+<p><br></p>
+<p>Next, we'll analyze difference between Piastri and Leclerc during the overtake lap and plot their telemetry, showing 
+speed, braking and acceleration differences during the overtake.</p>
+<p><br></p>
+<p><img alt="img.png" src="./images/code2.png"></p>
+<p><br></p>
+<p>Output: </p>
+<p><img alt="img.png" src="./images/time-lap-overtake.png"></p>
+<p><br></p>
+<p>Look at how much faster Piastri was compared to Leclerc in that incredible lap!</p>
+<p><br></p>
+<p>Now, let's take a look at the code and the output for the telemetry during this overtake:</p>
+<p><br></p>
+<p><img alt="img.png" src="./images/code3.png"></p>
+<p><br></p>
+<p>Output: </p>
+<p><br></p>
+<p><img alt="img.png" src="./images/Overtake.png"></p>
+<p><br></p>
+<p><span class="sub-title">
+  So, what do we see?
+</span></p>
+<p><br></p>
+<p>In the first graph, we can observe the speed difference between the two drivers. At the start of the line, Piastri is 
+faster than Leclerc. As they approach the first corner, both drivers slow down, but in the apex, Piastri´s line remains
+above Leclerc´s line, indicating that Piastri carried more speed through the corner. This is where the overtake happens.</p>
+<p><br></p>
+<p><img alt="img.png" src="./images/speed.png"></p>
+<p><br></p>
+<p>In the second and third graphs, we can analyze braking and the acceleration data. The first braking zone is critical, as 
+it´s where the overtake occurs. Piastri brakes early than Leclerc , managing a speed difference of more than 20km/h, carefully
+calculating the braking to pass Leclerc. In the second braking zone, Piastri breaks late to defend his position.</p>
+<p><br></p>
+<p><img alt="img.png" src="./images/braking.png"></p>
+<p><br></p>
+<p><img alt="img.png" src="./images/acceleration.png"></p>
+<p><br></p>
+<p>The acceleration graph shows the drivers´ styles. Leclerc's acceleration is more gradual and controlled, while Piastri´s is
+more aggressive. </p>
+<p><br></p>
+<p><span class="sub-title">
+  Conclusion:
+</span></p>
+<p><br></p>
+<p>Telemetry data helps us understand the strategies and styles of F1 drivers and that's why I love data!</p>
+  </div><!-- /.entry-content -->
+</section>
+           </div>
+       </div>
+     </main>
+     <footer class ="footer">
+         <address id="about" class="vcard body">
+              Proudly powered by <a href="https://getpelican.com/">Pelican</a>,
+              which takes great advantage of <a href="https://www.python.org/">Python</a>.
+         </address><!-- /#about -->
+     </footer><!-- /#contentinfo -->
+  </div>
+</body>
+</html>
