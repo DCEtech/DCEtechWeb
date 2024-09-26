@@ -99,6 +99,8 @@ speed, braking and acceleration differences during the overtake.
 
 Output: 
 
+<br>
+
 ![img.png]({static}/images/time-lap-overtake.png)
 
 <br>
