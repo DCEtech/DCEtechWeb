@@ -166,4 +166,9 @@ more aggressive.
 
 <br>
 
-Telemetry data helps us understand the strategies and styles of F1 drivers and that's why I love data!
+Telemetry data helps us understand the strategies and styles of F1. That´s Why I love Data. you can check out this code 
+on my GitHub repository at the link below:
+
+<br>
+
+https://github.com/DCEtech/F1AzerbaijianRaceAnalysis
