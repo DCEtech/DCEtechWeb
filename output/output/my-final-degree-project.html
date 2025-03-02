@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+          <title>DCEtech - My Final Degree Project</title>
+        <link reel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+        <link rel="stylesheet" href="./css/custom.css">
+        <link rel="icon" href="./images/logo.gif" type="image">
+        <meta charset="utf-8" />
+        <meta name="generator" content="Pelican" />
+
+
+
+
+    <meta name="tags" content="dataAnalysis" />
+    <meta name="tags" content="dataVisualization" />
+    <meta name="tags" content="WebDevelopment" />
+    <meta name="tags" content="MobileDevelopment" />
+    <meta name="tags" content="blog" />
+
+</head>
+<body class="article-page">
+  <div class ="container">
+     <header class="header">
+         <h1>
+            <a href=".">
+                <img src="./images/logo.gif" class="is-rounded" width=150px height=150px alt="Logo">
+            </a>
+            <a href="./">DCEtech</a>
+         </h1>
+     </header>
+     <main>
+       <div class="columns-1">
+           </div>
+           <div class = "column is-7" id = "resumen">
+<section id="content" class="body">
+  <header class="article">
+    <h2 id="entrytitle">
+      <a href="./my-final-degree-project.html" rel="bookmark"
+         title="Permalink to My Final Degree Project">My Final Degree Project</a></h2>
+ 
+  </header>
+  <br>
+  <footer class="post-info">
+    <time class="published" datetime="2025-03-01T00:00:00+01:00">
+      01/03/2025
+    </time>
+ <br>
+    <address class="vcard author">
+      By           <a class="url fn" href="./author/daniel.html">Daniel</a>
+    </address>
+ &nbsp
+    <div class="category">
+      Category: <a href="./category/multiplatformdevelopment.html">MultiplatformDevelopment</a>
+    </div>
+ &nbsp
+    <div class="tags">
+      Tags:<a href="./tag/dataanalysis.html">dataAnalysis</a><a href="./tag/datavisualization.html">dataVisualization</a><a href="./tag/webdevelopment.html">WebDevelopment</a><a href="./tag/mobiledevelopment.html">MobileDevelopment</a><a href="./tag/blog.html">blog</a>    </div>
+  </footer><!-- /.post-info -->
+  <br>
+  <div class="entry-content">
+    <p><br></p>
+<p><span class=sub-title>
+Introducing Financiero: A Multiplatform Finance App
+</span></p>
+<p><br></p>
+<p>Fist of all I´m going to introduce my multiplatform app, Financiero. You can check out this project on GitHub <a href="https://github.com/DCEtech/financiero">Financiero</a>.</p>
+<p><br></p>
+<p>It is a simple but powerfull app that allows you register your financial data and track you savings progress. One of my main motivations for developing this app is the importance of financial management. I belive that visualizing our savings growth can inspire peope to save more and imporve thir financial habits.</p>
+<p><br></p>
+<p><span class=sub-title>
+Technologies Used
+</span></p>
+<p><br></p>
+<p><span class=sub-title>
+Multiplatform Development
+</span></p>
+<p><br></p>
+<p>To build both a web and mobile app, I needed a multiplatform framework. Since I really like Python, I chose Flet, a Python-based framework build on Flutter. It´s powerfull, simple, and easy to use. </p>
+<p><br></p>
+<p><span class=sub-title>
+Database
+<span></p>
+<p><br></p>
+<p>For data storage I use a NoSQL data base: 
+MongoDB. I also like working with JSON, which MongoDB stores as BSON. This database offers great fexibility and high performance, making it ideal for handling financial data.</p>
+<p><br></p>
+<p><span class=sub-title>
+Deployment with Docker
+<span></p>
+<p><br></p>
+<p>To enhance deployment, I used Docker to containerize MongoDB. Learning DevOps skills is essential when deploying projects. In this case I use Docker Compose, wich is perfect for development or testing enviroments. </p>
+<p><br></p>
+<p>All you need is a docker-compose.ymal file, that describes all the cointainers are part of the app:</p>
+<p><br>
+  <span class="boxed-text">
+   <span class="green-text">
+      mongodb: <br>
+        image: mongodb/mongodb-community-server:6.0-ubi8 <br>
+        container_name: app_db <br>
+        ports: <br>
+          - "27017:27017" <br>
+        volumes: <br>
+          - type: bind <br>
+          source: ./data <br>
+          target: /data/db <br>
+   </span>
+  </span></p>
+<p><br></p>
+<p><span class=sub-title>
+Data Visualization
+<span></p>
+<p><br> </p>
+<p>For data visualization, I used the well-known Matplotlib library to create charts showing savings growth.</p>
+<p><br></p>
+<p><span class=sub-title>
+User Authentication and Security 
+<span></p>
+<p><br></p>
+<p>The app includes a login system, which is managed in the data base. To ensure strong and secure passwords,  I encrypt the user passwords before storing them. When a user logs in, the system  decrypts the stored password and comprares it with the input to ensure privacy and securty.
+<br>
+I use bcrypt, a password hashing function designed to be secure against brute-force attacks. This hashing  method includes:</p>
+<ul>
+<li>Salt generation: Adds randomness to prevent rainbow table attacks. </li>
+<li>Key stretching: Increases computational cost, making brutal-force attacks harder. </li>
+</ul>
+<p><br></p>
+<p><span class=sub-title>
+User Registration with Password Hashing
+<span></p>
+<p>Her´s the function to create a user with a hased password: </p>
+<p><br></p>
+<p><img alt="img.png" src="./images/createUser.png"></p>
+<p><br></p>
+<p><span class=sub-title>
+User Authentication 
+<span></p>
+<p><br></p>
+<p>This funciton authenticates a user thwn they log in: </p>
+<p><br></p>
+<p><img alt="img.png" src="./images/authenticationUser.png"></p>
+<p><br></p>
+<p><span class=sub-title>
+Final Thoughts
+<span></p>
+<p><br></p>
+<p>With Financiero, I aimed to create a siumple yet prowerful finance management app that helps users track thir savings efficiently. By combining Python, Flet, MongoDB, Docker and Matplotlib, I build a cross-platform application with secure authetiucation and real-time financial tracking.</p>
+<p><br></p>
+<p>I hope this project inspires others to manage thir finances better and explore new technologies in development. </p>
+  </div><!-- /.entry-content -->
+</section>
+           </div>
+       </div>
+     </main>
+     <footer class ="footer">
+         <address id="about" class="vcard body">
+              Proudly powered by <a href="https://getpelican.com/">Pelican</a>,
+              which takes great advantage of <a href="https://www.python.org/">Python</a>.
+         </address><!-- /#about -->
+     </footer><!-- /#contentinfo -->
+  </div>
+</body>
+</html>
