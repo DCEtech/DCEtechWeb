@@ -16,7 +16,7 @@ Fist of all I´m going to introduce my multiplatform app, Financiero. You can ch
 
 <br>
 
-It is a simple but powerfull app that allows you register your financial data and track you savings progress. One of my main motivations for developing this app is the importance of financial management. I belive that visualizing our savings growth can inspire peope to save more and imporve thir financial habits.
+It is a simple but powerfull app that allows you register your financial data and track you savings progress. One of my main motivations for developing this app is the importance of financial management. I belive that visualizing our savings growth can inspire people to save more and improve their financial habits.
 
 <br>
 
@@ -81,7 +81,7 @@ User Authentication and Security
 
 <br>
 
-The app includes a login system, which is managed in the data base. To ensure strong and secure passwords,  I encrypt the user passwords before storing them. When a user logs in, the system  decrypts the stored password and comprares it with the input to ensure privacy and securty.
+The app includes a login system, which is managed in the database. To ensure strong and secure passwords,  I encrypt the user passwords before storing them. When a user logs in, the system  decrypts the stored password and comprares it with the input to ensure privacy and securty.
 <br>
 I use bcrypt, a password hashing function designed to be secure against brute-force attacks. This hashing  method includes:
  
