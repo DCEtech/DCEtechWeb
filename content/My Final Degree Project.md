@@ -94,7 +94,7 @@ I use bcrypt, a password hashing function designed to be secure against brute-fo
 User Registration with Password Hashing
 <span>
 
-Her´s the function to create a user with a hased password: 
+Her´s the function to create a user with a hashed password: 
 
 <br>
 
@@ -108,7 +108,7 @@ User Authentication
 
 <br>
 
-This funciton authenticates a user thwn they log in: 
+This function authenticates a user when they log in: 
 
 <br>
 
@@ -122,7 +122,7 @@ Final Thoughts
 
 <br>
 
-With Financiero, I aimed to create a siumple yet prowerful finance management app that helps users track thir savings efficiently. By combining Python, Flet, MongoDB, Docker and Matplotlib, I build a cross-platform application with secure authetiucation and real-time financial tracking.
+With Financiero, I aimed to create a simple yet prowerful finance management app that helps users track thir savings efficiently. By combining Python, Flet, MongoDB, Docker and Matplotlib, I build a cross-platform application with secure authetiucation and real-time financial tracking.
 
 <br>
 
