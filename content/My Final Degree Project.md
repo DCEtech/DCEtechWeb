@@ -94,6 +94,8 @@ I use bcrypt, a password hashing function designed to be secure against brute-fo
 User Registration with Password Hashing
 <span>
 
+<br>
+
 Her´s the function to create a user with a hashed password: 
 
 <br>
