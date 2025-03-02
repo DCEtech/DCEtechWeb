@@ -2,6 +2,7 @@ Title: That´s Why I love Data! - F1 Telemetry Analysis
 Date: 2024-09-24
 Category: Data
 Tags: dataAnalysis, dataVisualization, f1, blog
+Author: Daniel
 
 <br>
 
