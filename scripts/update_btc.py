@@ -26,7 +26,7 @@ features = ["RSI", "EMA400", "Close", "dist_ema400"]
 
 X = data[features]
 
-model = joblib.load("models\decision_tree.plk")
+model = joblib.load("models/decision_tree.plk")
 
 data["prediction"] = model.predict(X)
 
