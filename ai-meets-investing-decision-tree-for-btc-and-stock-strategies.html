@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+          <title>DCEtech - AI Meets Investing: Decision Tree for BTC and Stock Strategies</title>
+        <link reel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+        <link rel="stylesheet" href="./css/custom.css">
+        <link rel="icon" href="./images/logo.gif" type="image">
+        <meta charset="utf-8" />
+        <meta name="generator" content="Pelican" />
+
+
+
+
+    <meta name="tags" content="AI" />
+    <meta name="tags" content="Decision Tree" />
+    <meta name="tags" content="Investing" />
+
+</head>
+<body class="article-page">
+  <div class ="container">
+     <header class="header">
+         <h1>
+            <a href=".">
+                <img src="./images/logo.gif" class="is-rounded" width=150px height=150px alt="Logo">
+            </a>
+            <a href="./">DCEtech</a>
+         </h1>
+     </header>
+     <main>
+       <div class="columns-1">
+           </div>
+           <div class = "column is-7" id = "resumen">
+<section id="content" class="body">
+  <header class="article">
+    <h2 id="entrytitle">
+      <a href="./ai-meets-investing-decision-tree-for-btc-and-stock-strategies.html" rel="bookmark"
+         title="Permalink to AI Meets Investing: Decision Tree for BTC and Stock Strategies">AI Meets Investing: Decision Tree for BTC and Stock Strategies</a></h2>
+ 
+  </header>
+  <br>
+  <footer class="post-info">
+    <time class="published" datetime="2025-12-13T00:00:00+01:00">
+      13/12/2025
+    </time>
+ <br>
+    <address class="vcard author">
+      By           <a class="url fn" href="./author/daniel.html">Daniel</a>
+    </address>
+ &nbsp
+    <div class="category">
+      Category: <a href="./category/ai.html">AI</a>
+    </div>
+ &nbsp
+    <div class="tags">
+      Tags:<a href="./tag/ai.html">AI</a><a href="./tag/decision-tree.html">Decision Tree</a><a href="./tag/investing.html">Investing</a>    </div>
+  </footer><!-- /.post-info -->
+  <br>
+  <div class="entry-content">
+    <p><br></p>
+<p><span class=sub-title--inherit>
+THIS BLOG EXPLORES TRADING STRATEGIES FOR LEARNING — NOT A FINANCIAL RECOMENDATION.
+</span></p>
+<p><br></p>
+<p>First of all I'm not a profesional trader. Honestly, I do a little investing here and there, but mainly I´m a developer and a curious explorer of data. In this little blog, I'll show you a simple strategy that works suprisingly well with an unpredictable asset like Bitcoin. </p>
+<p><br></p>
+<p>So, let´s get started. </p>
+<p><br></p>
+<p>Were this strategy come from?</p>
+<p><br></p>
+<p>I´m not sure if this strategy existed before I created it, but I´m a simple and logical person, so I just combine two indicators EMA400 and RSI. </p>
+<p>The EMA400 is perfect for smoothing the price and helping you see the overall direction. In a basic candlestick chart, the asset has big ups and downs, and the red and green candles can sometimes distort the real price action. With EMA, all the prices in a given period are considered, but the most recent ones are more important. A long EMA period (like 400) helps us find good buying points: when the price gets very close to or touch this line, it can often be a good moment to buy. When the price moves far away from the EMA, that distance can indicate a good moment to sell.  </p>
+<p>But that´s not enough. With only one indicator, you can´t build a reliable strategy, you need at leat two. 
+Because I wanted to keep the strategy simple and smooth, I also added the RSI. This indicator helps us indetify moments when the market if oversold or overbought, wich can be usefull for predicting tops and bottoms in the price.  </p>
+<p><br> </p>
+<p>So, I´ve explained the strategy, and now it´s time to choose the asset. I choose Bitcoin because it´s really unpredictable compared to traditional stockts and has this strong technological vision behind it. But you can choose any asset you like. </p>
+<p>An this is the point, we have the strategy, the asset and everything comes together, Decision Tree. </p>
+<p><br>
+<span class=sub-title>
+Machine Learning - Decision Tree
+</span></p>
+<p><br></p>
+<p><img alt="img.png" src="./images/Decision-tree.png"></p>
+<p><br></p>
+<p>How Deccission Tree works? </p>
+<p><br></p>
+<p>Basically, Decision Tree is a supervised Machine Learning algorithm that usees different inputs to make decissions based on previus data. The idea is simple: if we give the algorithm the signals from my strategy, it can learn how the strategy behaves and then replicate it in the future wihout me manually coding the rules. </p>
+<p>Instead of me telling the algorithm exacly what to do, the model finds the patterns by itself. It learns, for example, how the EMA400 and RSI interacted in the past and what usually happend next. Once it learns these patterns, we can automate the whole process. </p>
+<p>So, with this introuduce, let´s look at some code. </p>
+<p>I´will keep the implementation as simple as possible. The goal here is not build a perfect trading bot, but to show how we can traslate a basic strategy into a data that a Decision Tree can undertand and learn from.</p>
+<p>Step by step, we'll prepare the data, generate signals, and train the model to se how it reacts to Bitcoin´s price behavior. </p>
+<p><br></p>
+<p>1º Import the libraries that we'll need.</p>
+<p><br></p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">yfinance</span> <span class="k">as</span> <span class="nn">yf</span>
+<span class="kn">import</span> <span class="nn">pandas_ta</span> <span class="k">as</span> <span class="nn">ta</span>
+<span class="kn">from</span> <span class="nn">sklearn.tree</span> <span class="kn">import</span> <span class="n">DecisionTreeClassifier</span>
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">train_test_split</span>
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">classification_report</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+</code></pre></div>
+
+<p><br></p>
+<p>2º Download data historical data using the yfinance API. </p>
+<p><br></p>
+<div class="highlight"><pre><span></span><code><span class="n">today</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+
+<span class="n">start</span> <span class="o">=</span> <span class="s2">&quot;2009-12-01&quot;</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="n">yf</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="s2">&quot;BTC-USD&quot;</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="n">today</span><span class="p">)</span>
+</code></pre></div>
+
+<p><br></p>
+<p>3º Prepare and clean the data. </p>
+<p><br></p>
+<div class="highlight"><pre><span></span><code><span class="n">data</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">get_level_values</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;Close&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Close&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+</code></pre></div>
+
+<p><br></p>
+<p>4º Define the trading strategy with indicators.</p>
+<p><br></p>
+<div class="highlight"><pre><span></span><code><span class="n">data</span><span class="p">[</span><span class="s2">&quot;HL2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;High&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Low&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;EMA10&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">ema</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;HL2&quot;</span><span class="p">],</span> <span class="n">length</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;EMA55&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">ema</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;HL2&quot;</span><span class="p">],</span> <span class="n">length</span><span class="o">=</span><span class="mi">55</span><span class="p">)</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;EMA400&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">ema</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;HL2&quot;</span><span class="p">],</span> <span class="n">length</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;RSI&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">rsi</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;Close&quot;</span><span class="p">],</span> <span class="n">length</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;buy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="p">((</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;Close&quot;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;EMA400&quot;</span><span class="p">])</span> <span class="o">|</span>
+     <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;Close&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;EMA400&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1.15</span><span class="p">))</span>
+    <span class="o">&amp;</span>
+    <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;RSI&quot;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">30</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;sell&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;Close&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;EMA400&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1.25</span><span class="p">)</span>
+    <span class="o">&amp;</span>
+    <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;RSI&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">70</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;buy&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+
+    <span class="n">first_buy_pos</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;buy&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span> 
+    <span class="n">first_buy_ts</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">first_buy_pos</span><span class="p">]</span>          
+
+    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;sell&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;sell&quot;</span><span class="p">]</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">index</span> <span class="o">&gt;</span> <span class="n">first_buy_ts</span><span class="p">)</span>
+
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;sell&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+</code></pre></div>
+
+<p><br></p>
+<p>5º Prepare the machine learning model.</p>
+<p><br></p>
+<div class="highlight"><pre><span></span><code><span class="n">data</span><span class="p">[</span><span class="s2">&quot;signal&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span> 
+<span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;buy&quot;</span><span class="p">],</span> <span class="s2">&quot;signal&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;sell&quot;</span><span class="p">],</span> <span class="s2">&quot;signal&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;dist_ema400&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;Close&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;EMA400&quot;</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span>
+
+<span class="n">features</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;RSI&quot;</span><span class="p">,</span> <span class="s2">&quot;EMA400&quot;</span><span class="p">,</span> <span class="s2">&quot;Close&quot;</span><span class="p">,</span> <span class="s2">&quot;dist_ema400&quot;</span><span class="p">]</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">features</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">X</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="s2">&quot;signal&quot;</span><span class="p">]</span>
+</code></pre></div>
+
+<p><br></p>
+<p>6º Train the model. </p>
+<p><br></p>
+<div class="highlight"><pre><span></span><code><span class="n">X</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">features</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">X</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="s2">&quot;signal&quot;</span><span class="p">]</span>
+
+<span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">clf</span> <span class="o">=</span> <span class="n">DecisionTreeClassifier</span><span class="p">(</span>
+    <span class="n">max_depth</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+    <span class="n">min_samples_leaf</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+    <span class="n">class_weight</span><span class="o">=</span><span class="s2">&quot;balanced&quot;</span>
+<span class="p">)</span>
+
+<span class="n">clf</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+
+<span class="n">y_pred</span> <span class="o">=</span> <span class="n">clf</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+</code></pre></div>
+
+<p><br></p>
+<p>At this point, we collect the inputs generated ny our strategy and convert them into labels: buy(1), sell(-1), and do nothing / hold(0). These labels, together with the price and indicator values, become the data used to train the model. We keep the last 20% of the data as a test set, so the Decision Tree is evaluated on unseen market conditions. </p>
+<p>To train the model, we usea a frew important parameter, max_depth limits how complex the tree can become, helping to avoid overtitting. min_samples_leaf forces each decision to be supported byu a minimum number of data points, making the model more stable. Finally, class_weight="balance" is especially important because buy and sell signals are much rare than hold signals, and this parameter prevents the model form ignoring them. </p>
+<p><br></p>
+<p>7º Analyze the results. </p>
+<p><br></p>
+<div class="highlight"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="n">classification_report</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">))</span>
+</code></pre></div>
+
+<p><br></p>
+<div class="highlight"><pre><span></span><code>          precision    recall  f1-score   support
+
+      -1       1.00      1.00      1.00        77
+       0       1.00      1.00      1.00       653
+       1       0.77      0.91      0.83        11
+
+accuracy                           0.99       741
+macro avg      0.92      0.97      0.94       741
+weighted avg   1.00      0.99      0.99       741
+</code></pre></div>
+
+<p><br></p>
+<p>Once the model is trained, we analyze the results we can see a very high precision, recall, and F1-score, as well as a strong overall accuracy. However, these metrics should be interpreted carefully. The high scores mainly show that the Decision Tree learned how to reproduce the logic of the strategy from historical data.</p>
+<p><br></p>
+<p><span class=sub-title>
+Understanding the metrics
+</span></p>
+<p><br></p>
+<p>When evaluating the model, several metrics are used to understand how well it learned the strategy.</p>
+<p>Precision tells us how often the model is correct when it predicts a specific action, such as a buy or sell signal. In other words, it answers the question: when the model makes a decision, how often is it right?</p>
+<p>Recall measures how many of the actual signals generated by the strategy were correcly identified by the model helps us understand whether the model is missing important but or sell oportunities. </p>
+<p>The F1-score is a balance between precision and recall, giving us a single metric that reflexts both accuracy and consistency. </p>
+<p><br></p>
+<p><spam class=sub-title>
+Model Limitations
+</spam></p>
+<p><br></p>
+<p>It´s important to understand what this model can and cannot do.</p>
+<p>This Decision Tree is not predicting future prices. Instead, it is learning how to reproduce the behavior of a rule-based strategy using historical data. This high accuracy mainly shows that the model successfully learned the strategy´s logic, not that it can perfectly predict market movements.</p>
+<p>Additionally, the model´s performance depends heavily on the quality of the strategy itself. If th stategy performs poorly in certain market conditions, the model will simply learn those same limitations. </p>
+<p>Finally, like any model trained on historical data, there is no guarantee that the same patterns will hold in the future. Market behavior can change, and this approach should always be used as an analytical and education tool, not as finalcial advice. </p>
+<p><br></p>
+<p><spam class=sub-title>
+The model in action
+</spam></p>
+<p><br></p>
+<p>To close the blog, let´s see the model in action using near real-time Bitcoin data. This is where everything comes together: the strategy, the indicators, and the Decission Tree working as a single system. </p>
+<p>The goal here is not high-frequency trading, but to demostrate how a trained model can process fresh market data and generate decisions automatically, just like it did during training. </p>
+<p><br></p>
+<p><img alt="BTC Decision Tree Signals" src="./images/btc-latest.png"></p>
+<p><br></p>
+<p>To make the signals easier to see, this plot only shows Bitcoin data from December 1, 2022. If we used all the historical data, the price movements would be squished and it would be hard to spot the buy and sell points. This image is updated almost daily, so you can watch the model in action in near real-time and see how it reacts to the market using the strategy we built.</p>
+  </div><!-- /.entry-content -->
+</section>
+           </div>
+       </div>
+     </main>
+     <footer class ="footer">
+         <address id="about" class="vcard body">
+              Proudly powered by <a href="https://getpelican.com/">Pelican</a>,
+              which takes great advantage of <a href="https://www.python.org/">Python</a>.
+         </address><!-- /#about -->
+     </footer><!-- /#contentinfo -->
+  </div>
+</body>
+</html>
