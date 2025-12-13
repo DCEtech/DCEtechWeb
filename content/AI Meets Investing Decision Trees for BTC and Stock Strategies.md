@@ -49,11 +49,11 @@ Machine Learning - Decision Tree
 
 <br>
 
-How Deccission Tree works? 
+How Decision Tree works? 
 
 <br>
 
-Basically, Decision Tree is a supervised Machine Learning algorithm that usees different inputs to make decissions based on previus data. The idea is simple: if we give the algorithm the signals from my strategy, it can learn how the strategy behaves and then replicate it in the future wihout me manually coding the rules. 
+Basically, Decision Tree is a supervised Machine Learning algorithm that uses different inputs to make decisions based on previus data. The idea is simple: if we give the algorithm the signals from my strategy, it can learn how the strategy behaves and then replicate it in the future wihout me manually coding the rules. 
 
 Instead of me telling the algorithm exacly what to do, the model finds the patterns by itself. It learns, for example, how the EMA400 and RSI interacted in the past and what usually happend next. Once it learns these patterns, we can automate the whole process. 
 

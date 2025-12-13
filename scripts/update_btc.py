@@ -40,7 +40,7 @@ plt.plot(data.index, data["EMA400"], label="EMA400", linestyle="--", color='oran
 buys = data[data["prediction"] == 1]
 sells = data[data["prediction"] == -1]
 
-plt.scatter(buys.index, buys["Close"], marker="^", label="Buy", s=40, color='green')
+plt.scatter(buys.index, buys["Close"], marker="^", label="Buy", s=60, color='green')
 plt.scatter(sells.index, sells["Close"], marker="v", label="Sell", s=40, color='red')
 
 plt.legend(facecolor='black')  # legend background dark
