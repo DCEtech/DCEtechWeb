@@ -70,7 +70,7 @@ main {
         display: flex;
         justify-content: flex-start;
         width: 60% !important;
-         flex-direction: column;
+        flex-direction: column;
     }
 }
 
@@ -293,4 +293,32 @@ h3 img {
     border-radius: 10px;
     width: 100%;
     display: inline-block
+}
+
+.sub-title--inherit {
+  font-size: inherit;
+  color: #fc5404;
+  font-weight: bolder;
+}
+
+/* Monokai-style code blocks */
+.highlight {
+  background-color: #272822;
+  color: #f8f8f2;
+  padding: 1em;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+
+.highlight .k { color: #66d9ef; }  /* keywords */
+.highlight .s { color: #e6db74; }  /* strings */
+.highlight .c { color: #75715e; }  /* comments */
+.highlight .n { color: #f8f8f2; }  /* names */
+.highlight .o { color: #f92672; }  /* operators */
+.highlight .m { color: #ae81ff; }  /* numbers */
+
+.highlight pre,
+.highlight code {
+  background: none;
+  color: inherit;
 }
