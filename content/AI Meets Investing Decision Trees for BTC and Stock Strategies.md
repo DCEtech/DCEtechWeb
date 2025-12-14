@@ -33,7 +33,7 @@ Because I wanted to keep the strategy simple and smooth, I also added the RSI. T
 
 <br> 
 
-So, I´ve explained the strategy, and now it´s time to choose the asset. I choose Bitcoin because it´s really unpredictable compared to traditional stockts and has this strong technological vision behind it. But you can choose any asset you like. 
+So, I´ve explained the strategy, and now it´s time to choose the asset. I choose Bitcoin because it´s really unpredictable compared to traditional stocks and has this strong technological vision behind it. But you can choose any asset you like. 
 
 An this is the point, we have the strategy, the asset and everything comes together, Decision Tree. 
 
@@ -53,13 +53,13 @@ How Decision Tree works?
 
 <br>
 
-Basically, Decision Tree is a supervised Machine Learning algorithm that uses different inputs to make decisions based on previus data. The idea is simple: if we give the algorithm the signals from my strategy, it can learn how the strategy behaves and then replicate it in the future wihout me manually coding the rules. 
+Basically, Decision Tree is a supervised Machine Learning algorithm that uses different inputs to make decisions based on previous data. The idea is simple: if we give the algorithm the signals from my strategy, it can learn how the strategy behaves and then replicate it in the future wihout me manually coding the rules. 
 
 Instead of me telling the algorithm exacly what to do, the model finds the patterns by itself. It learns, for example, how the EMA400 and RSI interacted in the past and what usually happend next. Once it learns these patterns, we can automate the whole process. 
 
-So, with this introuduce, let´s look at some code. 
+So, with this introduce, let´s look at some code. 
 
-I´will keep the implementation as simple as possible. The goal here is not build a perfect trading bot, but to show how we can traslate a basic strategy into a data that a Decision Tree can undertand and learn from.
+I´will keep the implementation as simple as possible. The goal here is not build a perfect trading bot, but to show how we can traslate a basic strategy into a data that a Decision Tree can understand and learn from.
 
 Step by step, we'll prepare the data, generate signals, and train the model to se how it reacts to Bitcoin´s price behavior. 
 
@@ -183,7 +183,7 @@ y_pred = clf.predict(X_test)
 
 At this point, we collect the inputs generated ny our strategy and convert them into labels: buy(1), sell(-1), and do nothing / hold(0). These labels, together with the price and indicator values, become the data used to train the model. We keep the last 20% of the data as a test set, so the Decision Tree is evaluated on unseen market conditions. 
 
-To train the model, we usea a frew important parameter, max_depth limits how complex the tree can become, helping to avoid overtitting. min_samples_leaf forces each decision to be supported byu a minimum number of data points, making the model more stable. Finally, class_weight="balance" is especially important because buy and sell signals are much rare than hold signals, and this parameter prevents the model form ignoring them. 
+To train the model, we usea a frew important parameter, max_depth limits how complex the tree can become, helping to avoid overfitting. min_samples_leaf forces each decision to be supported buy a minimum number of data points, making the model more stable. Finally, class_weight="balance" is especially important because buy and sell signals are much rare than hold signals, and this parameter prevents the model form ignoring them. 
 
 <br>
 
@@ -238,9 +238,9 @@ It´s important to understand what this model can and cannot do.
 
 This Decision Tree is not predicting future prices. Instead, it is learning how to reproduce the behavior of a rule-based strategy using historical data. This high accuracy mainly shows that the model successfully learned the strategy´s logic, not that it can perfectly predict market movements.
 
-Additionally, the model´s performance depends heavily on the quality of the strategy itself. If th stategy performs poorly in certain market conditions, the model will simply learn those same limitations. 
+Additionally, the model´s performance depends heavily on the quality of the strategy itself. If the stategy performs poorly in certain market conditions, the model will simply learn those same limitations. 
 
-Finally, like any model trained on historical data, there is no guarantee that the same patterns will hold in the future. Market behavior can change, and this approach should always be used as an analytical and education tool, not as finalcial advice. 
+Finally, like any model trained on historical data, there is no guarantee that the same patterns will hold in the future. Market behavior can change, and this approach should always be used as an analytical and education tool, not as financial advice. 
 
 <br>
 
