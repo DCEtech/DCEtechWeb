@@ -43,7 +43,7 @@ sells = data[data["prediction"] == -1]
 plt.scatter(buys.index, buys["Close"], marker="^", label="Buy", s=60, color='green')
 plt.scatter(sells.index, sells["Close"], marker="v", label="Sell", s=40, color='red')
 
-plt.legend(facecolor='black')  # legend background dark
+plt.legend(facecolor='black') 
 plt.title("BTC Decision Tree Signals", color='white')
 plt.xlabel("Date", color='white')
 plt.ylabel("Price (USD)", color='white')

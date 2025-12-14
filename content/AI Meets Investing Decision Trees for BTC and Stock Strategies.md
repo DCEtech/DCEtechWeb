@@ -129,7 +129,6 @@ data["sell"] = (
 )
 
 if data["buy"].any():
-
     first_buy_pos = data["buy"].to_numpy().argmax() 
     first_buy_ts = data.index[first_buy_pos]          
 
