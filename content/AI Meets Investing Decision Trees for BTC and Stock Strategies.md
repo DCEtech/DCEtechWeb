@@ -20,7 +20,7 @@ So, let´s get started.
 
 <br>
 
-Were this strategy come from?
+Where does this strategy come from?
 
 <br>
 
