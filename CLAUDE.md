@@ -46,6 +46,10 @@ de la futura consultora Odoo, pero NO es el punto de entrada comercial.
 - ML (desde `ml/`, con `conda run -n ml_env`):
   - Tests: `python -m pytest` (o `python -m pytest ml` desde la raíz)
   - Modelo base (fase 2): `python -m btc_decision_tree.baseline`
+  - Walk-forward del modelo nuevo (fase 3): `python -m btc_decision_tree.model`
+    (no evalúa el test)
+  - `features.py` e `indicators.py` no usan pandas_ta; solo `features_original.py`
+    (para el baseline) lo usa.
   - Snapshot nuevo de datos: `python -m btc_decision_tree.data --end YYYY-MM-DD`
     (`end` exclusivo). Los experimentos leen `DEFAULT_SNAPSHOT` de `data.py`,
     nunca yfinance directamente.

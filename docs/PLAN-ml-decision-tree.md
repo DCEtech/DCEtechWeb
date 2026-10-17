@@ -173,6 +173,20 @@ tendrá que apuntar al nuevo script y seguir escribiendo en
      features es RSI 0,95, dist_ema400 0,04, EMA400 0,02 y Close 0,00: el árbol
      solo reaprende los umbrales de la regla.
 3. Implementar target, features y validación nuevos con test anti-fuga.
+   Código hecho el 2026-10-18:
+   - `indicators.py`, `features.py`, `forward_return_target` y `model.py`.
+   - 42 tests, entre ellos el anti-fuga y la comparación de los indicadores
+     con pandas_ta y con bucles escritos a mano.
+
+   Resultado del walk-forward (5 folds en train, test NO evaluado):
+   - **Sin ventaja clara.** La mejor combinación (`max_depth=6`,
+     `min_samples_leaf=100`) tiene un lift medio de +1,8 puntos, con un rango
+     por fold de −6,9 a +10,4. La segunda (3/50) da +1,7 de media, pero −12,5
+     en su peor fold.
+   - 11 de las 20 combinaciones están por debajo de la tasa base.
+   - La tasa base cambia entre folds del 21 % al 54 %.
+   - Siguiente paso, según lo decidido: probar un umbral ajustado por
+     volatilidad y, si sigue sin haber señal, *triple barrier*.
 4. Backtest y comparación con baselines.
 5. Adaptar el workflow existente, que ya funciona a diario.
    - Sustituir `update_btc.py` por `plot.py`.
