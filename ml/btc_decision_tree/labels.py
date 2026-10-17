@@ -1,9 +1,11 @@
-"""Etiquetas de la estrategia de reglas original (EMA400 + RSI).
+"""Etiquetas (targets) para los modelos.
 
-OJO: estas etiquetas se calculan con las mismas columnas que el modelo
-recibe como features (RSI, Close, EMA400). Por eso el árbol solo reaprende
-las reglas y saca un 99 % de accuracy sin predecir nada. Se mantienen como
-baseline de la fase 2; el target nuevo (fase 3) mirará el precio futuro.
+- `rule_signals`: la estrategia de reglas original (EMA400 + RSI). OJO: se
+  calcula con las mismas columnas que el modelo recibe como features (RSI,
+  Close, EMA400), por eso el árbol solo reaprende las reglas y saca un 99 %
+  de accuracy sin predecir nada. Solo se usa en el baseline de la fase 2.
+- `forward_return_target`: target de la fase 3. Mira el precio futuro, que
+  es justo lo que el modelo no puede ver en sus features.
 """
 
 from __future__ import annotations
@@ -11,6 +13,24 @@ from __future__ import annotations
 import pandas as pd
 
 BUY, HOLD, SELL = 1, 0, -1
+
+
+def forward_return_target(
+    close: pd.Series, horizon: int = 30, threshold: float = 0.10
+) -> pd.Series:
+    """1 si dentro de `horizon` filas el precio sube más de `threshold`, si no 0.
+
+    Las filas sin precio futuro conocido (las últimas `horizon`) se eliminan:
+    no son 0, son desconocidas.
+    """
+    if horizon <= 0:
+        raise ValueError(f"horizon debe ser positivo; es {horizon}")
+    if len(close) <= horizon:
+        raise ValueError(f"Hacen falta más de {horizon} filas; hay {len(close)}")
+
+    future_return = close.shift(-horizon) / close - 1
+    known = future_return.notna()
+    return (future_return[known] > threshold).astype(int).rename("target")
 
 
 def buy_condition(df: pd.DataFrame) -> pd.Series:
