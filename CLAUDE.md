@@ -34,8 +34,8 @@ de la futura consultora Odoo, pero NO es el punto de entrada comercial.
   Versiones exportadas en `ml/environment.yml` (versionado en git).
 - Ejecutar: `conda run -n ml_env python <script>`.
 - Recrear: `conda env create -f ml/environment.yml`.
-- Ojo: `ml_env` tiene scikit-learn 1.8.0, pero `models/decision_tree.plk` es de
-  la 1.6.1, y el CI instala versiones sin fijar.
+- Ojo: `models/decision_tree.plk` es de scikit-learn 1.6.1, pero `ml_env` tiene la
+  1.8.0 y el CI la 1.9.1 (fijada en `requirements-ci.txt`).
 
 ## Comandos
 - Build: `make html` (= `pelican content -o output -s pelicanconf.py`)
