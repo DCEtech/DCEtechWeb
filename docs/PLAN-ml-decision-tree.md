@@ -132,9 +132,18 @@ tendrá que apuntar al nuevo script y seguir escribiendo en
    - acciones con Node 24: checkout@v5, setup-python@v6, actions-gh-pages@v4.
    Queda pendiente que el `.plk` se creó con sklearn 1.6.1 y el CI lo carga con
    la 1.9.1 (`InconsistentVersionWarning`); se resuelve en la fase 5.
-2. Reconstruir en `ml/` el entrenamiento del modelo actual a partir del código del
-   post, porque no existe en el repo. Será la baseline de partida y servirá para
-   comprobar que reproduce el classification report publicado.
+2. ~~Reconstruir en `ml/` el entrenamiento del modelo actual.~~ Hecho el 2026-10-17.
+   - Código: `ml/btc_decision_tree/` con `data.py`, `features.py`, `labels.py` y
+     `baseline.py`, más 13 tests en `ml/tests/`.
+   - Datos: snapshot fijo `ml/data/btc-usd_2014-09-17_2026-10-16.csv` y
+     `random_state=42`. Dos ejecuciones seguidas dan un resultado idéntico.
+   - Fidelidad: sobre el mismo snapshot, X e y son idénticos a los del código de
+     `Untitled.ipynb`, y las predicciones en test coinciden al 100 % con
+     `models/decision_tree.plk`.
+   - Resultado (test del 2024-08-05 al 2026-10-16, 803 días): accuracy del 100 %,
+     y en la clase compra precision y recall de 0,92. La importancia de las
+     features es RSI 0,95, dist_ema400 0,04, EMA400 0,02 y Close 0,00: el árbol
+     solo reaprende los umbrales de la regla.
 3. Implementar target, features y validación nuevos con test anti-fuga.
 4. Backtest y comparación con baselines.
 5. Adaptar el workflow existente, que ya funciona a diario.

@@ -43,6 +43,12 @@ de la futura consultora Odoo, pero NO es el punto de entrada comercial.
 - Build producción: `make publish` (usa `publishconf.py`)
 - Regenerar gráfica: `python scripts/update_btc.py` (desde la raíz del repo)
 - Publicar: push a `main` (GitHub Actions); `make github` existe pero no se usa.
+- ML (desde `ml/`, con `conda run -n ml_env`):
+  - Tests: `python -m pytest` (o `python -m pytest ml` desde la raíz)
+  - Modelo base (fase 2): `python -m btc_decision_tree.baseline`
+  - Snapshot nuevo de datos: `python -m btc_decision_tree.data --end YYYY-MM-DD`
+    (`end` exclusivo). Los experimentos leen `DEFAULT_SNAPSHOT` de `data.py`,
+    nunca yfinance directamente.
 
 ## Reglas de trabajo
 - Antes de cambiar algo de Pelican, explica el porqué y respeta la estructura
