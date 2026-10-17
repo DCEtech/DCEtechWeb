@@ -163,3 +163,6 @@ tendrá que apuntar al nuevo script y seguir escribiendo en
   y además se pueden testear.
 - ¿Qué hacer con la gráfica del post original cuando exista el modelo nuevo?
   Opciones: congelarla o seguir mostrando las señales del modelo viejo.
+- Limpiar `ml/environment.yml`: ahora es el export completo de `ml_env`
+  (~154 líneas, con Jupyter y dependencias indirectas). Decidir qué dejar,
+  por ejemplo solo las dependencias directas (`--from-history` más las de pip).
