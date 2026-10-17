@@ -116,7 +116,7 @@ fabric.properties
 
 ### Pelican ###
 # Output directory
-.output/
+output/
 
 ### Linux ###
 *~
