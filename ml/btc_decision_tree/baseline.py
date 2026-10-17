@@ -19,7 +19,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 
 from btc_decision_tree.data import DEFAULT_SNAPSHOT, load_snapshot
-from btc_decision_tree.features import ORIGINAL_FEATURES, add_original_features
+from btc_decision_tree.features_original import ORIGINAL_FEATURES, add_original_features
 from btc_decision_tree.labels import rule_signals
 
 TEST_SIZE = 0.2
