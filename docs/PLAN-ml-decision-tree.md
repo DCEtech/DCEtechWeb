@@ -76,23 +76,51 @@ data["future_return"] = data["Close"].shift(-horizon) / data["Close"] - 1
 data["target"] = (data["future_return"] > 0.10).astype(int)
 data = data.iloc[:-horizon]  # las últimas N filas no tienen futuro conocido
 ```
-Versión avanzada (fase posterior): *triple barrier* (take-profit, stop-loss y
-límite temporal).
+**Decidido (2026-10-18):** el target es un retorno a 30 días mayor del +10 %.
+- Lo calcula una función nueva, `forward_return_target`, en `labels.py`.
+- La regla original se queda en el mismo archivo, solo para el baseline.
+- Se descartan las últimas 30 filas, que no tienen futuro conocido.
+- Si el modelo no mejora la tasa base, se probará primero un umbral ajustado
+  por volatilidad y después *triple barrier* (take-profit, stop-loss y límite
+  temporal).
 
-### Features (todas relativas, calculadas solo con datos hasta t)
-- `dist_ema400`, `dist_ema55`, pendiente de la EMA400 (cambio % en k días)
-- `RSI(14)`
-- Retornos pasados: 1, 7 y 30 días
-- Volatilidad: desviación típica móvil de retornos (30 días)
-- Opcional: señal de la estrategia original como una feature más
+Tasa base en el snapshot: 37,6 % en train y 23,3 % en test. Varía mucho por
+año (13 % en 2018, 65 % en 2017), así que la precision siempre se compara con
+la tasa base del mismo periodo.
 
-### Validación
-- `TimeSeriesSplit` walk-forward, nunca `shuffle`
-- Hueco (embargo) de `horizon` días entre train y test, porque el target del
-  final del train mira dentro del test
-- Hiperparámetros (`max_depth`, `min_samples_leaf`) ajustados solo con CV
-  sobre train. Test final usado una única vez
-- `random_state` fijo y snapshot de datos en disco (yfinance cambia)
+### Indicadores (decidido)
+- El código nuevo usa indicadores propios en pandas, en `indicators.py`, sin
+  pandas_ta. `baseline.py` sigue con pandas_ta para reproducir el original.
+- Dos trampas a evitar:
+  - La EMA lleva semilla SMA (la media de las primeras `length` filas) y
+    `ewm(span=length, adjust=False)`. El `ewm(span)` por defecto da otro resultado.
+  - El RSI de Wilder usa `ewm(alpha=1/length)`, no `span=length`. pandas_ta no
+    usa semilla SMA en el RSI, así que los dos solo coinciden tras un calentamiento.
+- Tests:
+  - comparar con pandas_ta descartando las primeras 10×length filas, con tolerancia;
+  - comparar la EMA con un bucle recursivo escrito a mano.
+
+### Features (decidido: todas relativas, calculadas solo con datos hasta t)
+- `dist_ema400` y `dist_ema55`: Close / EMA − 1. Las EMAs se calculan sobre HL2.
+- `ema400_slope_20d`: cambio % de la EMA400 en 20 días.
+- `rsi14`.
+- `ret_1d`, `ret_7d`, `ret_30d`: retornos pasados.
+- `vol_30d`: desviación típica móvil de los retornos diarios en 30 días.
+- Test anti-fuga: alterar los precios posteriores a t no cambia las features en t.
+
+### Validación (decidido)
+- Split temporal:
+  - Train hasta el 2024-08-04, sin sus últimas 30 filas (purga): termina el
+    2024-07-05. Así ninguna etiqueta del train mira dentro del test.
+  - Test desde el 2024-08-05 hasta 30 días antes del final del snapshot.
+  - **El test no se evalúa todavía.**
+- Walk-forward solo en train: `TimeSeriesSplit(n_splits=5, gap=30)`, con
+  `max_depth` de 2 a 6 y `min_samples_leaf` en {20, 50, 100, 200}.
+- Sin `class_weight="balanced"`: lo que importa es acertar cuando dice clase 1.
+- Por fold se reportan la precision de la clase 1, la tasa base, el lift
+  (precision − tasa base) y el número de predicciones de clase 1. Se elige la
+  combinación con mejor lift medio, mirando también el peor fold.
+- `random_state` fijo y snapshot de datos en disco (yfinance cambia).
 
 ### Evaluación
 - Métricas de clasificación: precision de la clase 1 (cuando dice "compra",
@@ -156,11 +184,11 @@ tendrá que apuntar al nuevo script y seguir escribiendo en
 - ¿Post nuevo ("Part 2: making the Decision Tree actually learn") enlazado
   desde el original, o reescribir el original? Recomendado: post nuevo. Contar
   el error y su corrección demuestra más criterio que un post perfecto.
-- Horizonte y umbral del target (30 días / 10 % es un punto de partida).
+- ~~Horizonte y umbral del target.~~ Decidido el 2026-10-18: 30 días y +10 %
+  (ver sección 2).
 - ¿Incluir una acción (p. ej. SPY) para cumplir el título "BTC and Stock"?
-- ¿Sustituir pandas_ta, que está poco mantenido y es la causa probable del segfault,
-  por indicadores propios en `features.py`? EMA y RSI son unas pocas líneas de pandas
-  y además se pueden testear.
+- ~~¿Sustituir pandas_ta?~~ Decidido el 2026-10-18: el código nuevo usa
+  indicadores propios y el baseline sigue con pandas_ta (ver sección 2).
 - ¿Qué hacer con la gráfica del post original cuando exista el modelo nuevo?
   Opciones: congelarla o seguir mostrando las señales del modelo viejo.
 - Limpiar `ml/environment.yml`: ahora es el export completo de `ml_env`
