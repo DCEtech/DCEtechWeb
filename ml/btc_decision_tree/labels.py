@@ -8,9 +8,13 @@
   precio futuro, que es justo lo que el modelo no puede ver en sus features.
 - `vol_adjusted_target`: experimento 2. Igual, pero el umbral se mide en
   unidades de volatilidad reciente, así significa lo mismo en cada régimen.
+- `triple_barrier_target`: experimento 3. Barreras simétricas de
+  take-profit y stop-loss, más un límite de tiempo: ¿qué se toca primero?
 """
 
 from __future__ import annotations
+
+from collections.abc import Callable
 
 import numpy as np
 import pandas as pd
@@ -69,27 +73,74 @@ def vol_adjusted_target(
     return (future > k * unit).astype(int).rename("target")
 
 
+def first_touch_labels(paths: np.ndarray, barrier: np.ndarray) -> np.ndarray:
+    """Etiqueta *triple barrier* a partir de los log-retornos futuros.
+
+    `paths[i, j]` es log(C[t+j+1] / C[t]) para la fila i, y `barrier[i]` la
+    distancia de las dos barreras (simétricas). Devuelve 1 si la superior
+    (≥ +b) se toca antes que la inferior (≤ −b), y 0 si se toca antes la
+    inferior o si no se toca ninguna (expira).
+    """
+    horizon = paths.shape[1]
+    hit_up = paths >= barrier[:, None]
+    hit_down = paths <= -barrier[:, None]
+    # argmax da el primer True; si no hay ninguno, usamos `horizon` (= nunca).
+    first_up = np.where(hit_up.any(axis=1), hit_up.argmax(axis=1), horizon)
+    first_down = np.where(hit_down.any(axis=1), hit_down.argmax(axis=1), horizon)
+    return (first_up < first_down).astype(int)
+
+
+def triple_barrier_target(
+    close: pd.Series, k: float, horizon: int = 30, window: int = 30
+) -> pd.Series:
+    """*Triple barrier* con barreras ±k · vol_window[t] · √horizon y límite a
+    `horizon` días, evaluado con el cierre diario.
+
+    Se eliminan las últimas `horizon` filas (aunque ya hayan tocado una
+    barrera) y las primeras, sin volatilidad calculada.
+    """
+    if k < 0:
+        raise ValueError(f"k no puede ser negativo; es {k}")
+    if horizon <= 0:
+        raise ValueError(f"horizon debe ser positivo; es {horizon}")
+    if len(close) <= horizon:
+        raise ValueError(f"Hacen falta más de {horizon} filas; hay {len(close)}")
+
+    prices = close.astype(float)
+    log_prices = np.log(prices.to_numpy())
+    n = len(log_prices)
+    paths = np.full((n, horizon), np.nan)
+    for j in range(1, horizon + 1):
+        paths[: n - j, j - 1] = log_prices[j:] - log_prices[: n - j]
+    barrier = (k * log_return_volatility(prices, window) * np.sqrt(horizon)).to_numpy()
+
+    known = ~np.isnan(barrier) & (np.arange(n) < n - horizon)
+    labels = first_touch_labels(paths[known], barrier[known])
+    return pd.Series(labels, index=close.index[known], name="target")
+
+
 def calibrate_k(
-    close: pd.Series,
+    label_fn: Callable[[float], pd.Series],
     train_index: pd.Index,
     target_rate: float = 0.375,
-    horizon: int = 30,
-    window: int = 30,
     grid: np.ndarray = K_GRID,
 ) -> tuple[float, float]:
     """k de `grid` cuya tasa base en `train_index` queda más cerca de `target_rate`.
 
-    Solo mira la proporción de clases, nunca el rendimiento del modelo.
-    Devuelve (k, tasa base obtenida).
+    `label_fn(k)` devuelve las etiquetas para esa k (p. ej. una llamada a
+    `vol_adjusted_target` o `triple_barrier_target`). Solo mira la proporción
+    de clases, nunca el rendimiento del modelo. Devuelve (k, tasa obtenida).
     """
-    future, unit = _future_log_return_and_unit_threshold(close, horizon, window)
-    missing = train_index.difference(future.index)
-    if len(missing):
-        raise ValueError(f"{len(missing)} filas de train no tienen target conocido")
-    future, unit = future.loc[train_index].to_numpy(), unit.loc[train_index].to_numpy()
-    rates = np.array([(future > k * unit).mean() for k in grid])
-    best = int(np.argmin(np.abs(rates - target_rate)))  # en empate, el k más pequeño
-    return float(grid[best]), float(rates[best])
+    rates = []
+    for k in grid:
+        labels = label_fn(float(k))
+        missing = train_index.difference(labels.index)
+        if len(missing):
+            raise ValueError(f"{len(missing)} filas de train no tienen target conocido")
+        rates.append(labels.loc[train_index].mean())
+    rates_array = np.array(rates)
+    best = int(np.argmin(np.abs(rates_array - target_rate)))  # en empate, el k más pequeño
+    return float(grid[best]), float(rates_array[best])
 
 
 def buy_condition(df: pd.DataFrame) -> pd.Series:

@@ -7,8 +7,10 @@ from btc_decision_tree.labels import (
     HOLD,
     SELL,
     calibrate_k,
+    first_touch_labels,
     forward_return_target,
     rule_signals,
+    triple_barrier_target,
     vol_adjusted_target,
 )
 
@@ -105,7 +107,7 @@ def test_vol_adjusted_target_with_k_zero_is_any_rise() -> None:
 def test_calibrate_k_hits_target_rate_and_rate_falls_with_k() -> None:
     close = random_close(n=2000)
     train_index = close.index[30:1500]
-    k, rate = calibrate_k(close, train_index, target_rate=0.375)
+    k, rate = calibrate_k(lambda x: vol_adjusted_target(close, k=x), train_index, target_rate=0.375)
     assert abs(rate - 0.375) < 0.01
     rates = [vol_adjusted_target(close, k=x).loc[train_index].mean() for x in (0.2, 0.6, 1.0)]
     assert rates[0] >= rates[1] >= rates[2]
@@ -114,4 +116,56 @@ def test_calibrate_k_hits_target_rate_and_rate_falls_with_k() -> None:
 def test_calibrate_k_rejects_train_rows_without_target() -> None:
     close = random_close()
     with pytest.raises(ValueError, match="no tienen target"):
-        calibrate_k(close, close.index)  # incluye las últimas 30 filas, sin futuro
+        # incluye las últimas 30 filas, sin futuro
+        calibrate_k(lambda x: vol_adjusted_target(close, k=x), close.index)
+
+
+# --- triple barrier -------------------------------------------------------
+# paths[i, j] = log-retorno acumulado hasta el día j+1; barrera ±0.10.
+
+def test_first_touch_upper_first() -> None:
+    paths = np.array([[0.02, 0.06, 0.11, -0.20]])  # arriba en el día 3, abajo en el 4
+    assert first_touch_labels(paths, np.array([0.10])).tolist() == [1]
+
+
+def test_first_touch_lower_first() -> None:
+    paths = np.array([[-0.03, -0.12, 0.15, 0.20]])  # abajo en el día 2
+    assert first_touch_labels(paths, np.array([0.10])).tolist() == [0]
+
+
+def test_first_touch_expires() -> None:
+    paths = np.array([[0.05, -0.05, 0.09, -0.09]])  # nunca llega a ±0.10
+    assert first_touch_labels(paths, np.array([0.10])).tolist() == [0]
+
+
+def test_first_touch_exact_barrier_counts_as_touch() -> None:
+    assert first_touch_labels(np.array([[0.0, 0.10]]), np.array([0.10])).tolist() == [1]
+    assert first_touch_labels(np.array([[0.0, -0.10]]), np.array([0.10])).tolist() == [0]
+
+
+def test_triple_barrier_matches_loop_and_drops_rows_without_future() -> None:
+    close = random_close()
+    k, horizon = 0.8, 30
+    target = triple_barrier_target(close, k=k, horizon=horizon)
+    assert target.index[0] == close.index[30]     # antes no hay volatilidad
+    assert target.index[-1] == close.index[-31]   # las últimas 30 no tienen futuro
+
+    vol = np.log(close / close.shift(1)).rolling(30).std()
+    for t in (100, 250, 400):
+        barrier = k * vol.iloc[t] * np.sqrt(horizon)
+        expected = 0
+        for j in range(1, horizon + 1):
+            move = np.log(close.iloc[t + j] / close.iloc[t])
+            if move >= barrier:
+                expected = 1
+                break
+            if move <= -barrier:
+                break
+        assert target.loc[close.index[t]] == expected
+
+
+def test_calibrate_k_works_with_triple_barrier() -> None:
+    close = random_close(n=2000)
+    train_index = close.index[30:1500]
+    k, rate = calibrate_k(lambda x: triple_barrier_target(close, k=x), train_index, 0.375)
+    assert abs(rate - 0.375) < 0.01

@@ -1,17 +1,19 @@
 """Fase 3: target a futuro, split temporal con purga y walk-forward en train.
 
-Dos experimentos:
+Tres experimentos:
 - `return`: retorno a 30 días > +10 % (experimento 1).
-- `vol`: log-retorno a 30 días > k · vol_30d · √30, con k calibrado solo con
-  la tasa base del train (experimento 2).
+- `vol`: log-retorno a 30 días > k · vol_30d · √30 (experimento 2).
+- `barrier`: *triple barrier* simétrica ±k · vol_30d · √30 a 30 días
+  (experimento 3).
+En `vol` y `barrier`, k se calibra solo con la tasa base del train.
 
 El periodo de test se separa aquí pero NO se evalúa: se usará una única vez,
 al final, con el candidato ya elegido.
 
 Uso (desde `ml/`):
-    python -m btc_decision_tree.model                 # experimento 1
-    python -m btc_decision_tree.model --target vol    # experimento 2
-    python -m btc_decision_tree.model --target both   # los dos + veredictos
+    python -m btc_decision_tree.model                    # experimento 1
+    python -m btc_decision_tree.model --target barrier   # experimento 3
+    python -m btc_decision_tree.model --target all       # los tres + veredictos
 """
 
 from __future__ import annotations
@@ -29,7 +31,12 @@ from sklearn.tree import DecisionTreeClassifier
 from btc_decision_tree.data import DEFAULT_SNAPSHOT, load_snapshot
 from btc_decision_tree.features import add_relative_features
 from btc_decision_tree.indicators import log_return_volatility
-from btc_decision_tree.labels import calibrate_k, forward_return_target, vol_adjusted_target
+from btc_decision_tree.labels import (
+    calibrate_k,
+    forward_return_target,
+    triple_barrier_target,
+    vol_adjusted_target,
+)
 
 HORIZON = 30
 THRESHOLD = 0.10
@@ -42,6 +49,8 @@ N_SPLITS = 5
 MAX_DEPTHS = range(2, 7)
 MIN_SAMPLES_LEAFS = (20, 50, 100, 200)
 RANDOM_STATE = 42
+MIN_BETS_PER_FOLD = 3
+TARGETS = ("return", "vol", "barrier")
 
 
 @dataclass(frozen=True)
@@ -58,6 +67,7 @@ class Experiment:
     split: TrainTest
     vol: pd.Series  # volatilidad de log-retornos, para el baseline
     note: str = ""
+    require_c4: bool = False  # C4 decide solo en el experimento 3
 
 
 def build_dataset(
@@ -96,26 +106,36 @@ def split_train_test(
 
 
 def prepare_experiment(prices: pd.DataFrame, target: str) -> Experiment:
-    """Construye el split del experimento `target` ("return" o "vol")."""
+    """Construye el split del experimento `target` ("return", "vol" o "barrier")."""
     X, y_return = build_dataset(prices)
     split = split_train_test(X, y_return)
     vol = log_return_volatility(prices["Close"], VOL_WINDOW)
+    close = prices["Close"]
     if target == "return":
         return Experiment("return >+10 %", split, vol)
-    if target != "vol":
+    if target == "vol":
+        label_fn, name = (lambda k: vol_adjusted_target(close, k, HORIZON, VOL_WINDOW)), "vol"
+    elif target == "barrier":
+        label_fn, name = (lambda k: triple_barrier_target(close, k, HORIZON, VOL_WINDOW)), "barrier"
+    else:
         raise ValueError(f"target desconocido: {target}")
 
     # k se calibra UNA vez con la tasa base de todo el train (incluye las
     # ventanas de validación): solo fija la proporción de clases.
-    k, rate = calibrate_k(prices["Close"], split.X_train.index, K_TARGET_RATE, HORIZON, VOL_WINDOW)
+    k, rate = calibrate_k(label_fn, split.X_train.index, K_TARGET_RATE)
     low, high = K_RATE_RANGE
     if not low <= rate <= high:
         raise ValueError(f"Con k={k} la tasa base del train es {rate:.1%}, fuera de {K_RATE_RANGE}")
-    y_vol = vol_adjusted_target(prices["Close"], k, HORIZON, VOL_WINDOW).reindex(X.index)
-    if y_vol.isna().any():
-        raise ValueError("Hay filas del dataset sin target ajustado por volatilidad")
-    split = split_train_test(X, y_vol.astype(int))
-    return Experiment(f"vol k={k:.2f}", split, vol, f"k={k:.2f} (tasa base train {rate:.1%})")
+    y = label_fn(k).reindex(X.index)
+    if y.isna().any():
+        raise ValueError(f"Hay filas del dataset sin target '{name}'")
+    return Experiment(
+        f"{name} k={k:.2f}",
+        split_train_test(X, y.astype(int)),
+        vol,
+        f"k={k:.2f} (tasa base train {rate:.1%})",
+        require_c4=(target == "barrier"),
+    )
 
 
 def evaluate_fold(y_true: pd.Series, y_pred: np.ndarray) -> dict[str, float]:
@@ -129,6 +149,29 @@ def evaluate_fold(y_true: pd.Series, y_pred: np.ndarray) -> dict[str, float]:
         "precision_1": precision,
         "lift": precision - base_rate,
     }
+
+
+def bet_entries(pred: np.ndarray, cooldown: int = HORIZON) -> list[int]:
+    """Posiciones donde se abre una apuesta.
+
+    El primer 1 abre una apuesta; los siguientes 1 no cuentan hasta que pasan
+    `cooldown` filas (la siguiente entrada es posible en entrada + cooldown).
+    Se llama una vez por fold, así que el bloqueo nunca cruza folds.
+    """
+    entries: list[int] = []
+    next_allowed = 0
+    for i, value in enumerate(pred):
+        if value == 1 and i >= next_allowed:
+            entries.append(i)
+            next_allowed = i + cooldown
+    return entries
+
+
+def evaluate_bets(y_true: pd.Series, y_pred: np.ndarray) -> dict[str, float]:
+    """Nº de apuestas y su precision (etiqueta del día de entrada)."""
+    entries = bet_entries(y_pred)
+    precision = float(y_true.iloc[entries].mean()) if entries else np.nan
+    return {"n_bets": len(entries), "bet_precision": precision}
 
 
 def vol_baseline_predict(vol_train: pd.Series, vol_val: pd.Series) -> np.ndarray:
@@ -160,13 +203,15 @@ def walk_forward(
                 clf = DecisionTreeClassifier(
                     max_depth=depth, min_samples_leaf=leaf, random_state=RANDOM_STATE
                 ).fit(X_tr, y_tr)
+                y_pred = clf.predict(X_val)
                 rows.append({
                     "fold": fold,
                     "val_start": X_val.index[0].date(),
                     "val_end": X_val.index[-1].date(),
                     "max_depth": depth,
                     "min_samples_leaf": leaf,
-                    **evaluate_fold(y_val, clf.predict(X_val)),
+                    **evaluate_fold(y_val, y_pred),
+                    **evaluate_bets(y_val, y_pred),
                     "vol_base_precision": baseline["precision_1"],
                     "vol_base_lift": baseline["lift"],
                 })
@@ -190,15 +235,20 @@ def summarize(results: pd.DataFrame) -> pd.DataFrame:
     return summary.sort_values("lift_mean", ascending=False)
 
 
-def success_criteria(fold_rows: pd.DataFrame) -> dict[str, float | bool]:
-    """Los 3 criterios de éxito pre-registrados, para las filas (una por fold)
-    de una combinación. Un fold sin predicciones (lift NaN) no cuenta como
-    lift positivo; media y desviación se calculan sobre los folds con lift."""
+def success_criteria(fold_rows: pd.DataFrame, require_c4: bool = False) -> dict[str, float | bool]:
+    """Criterios de éxito pre-registrados para las filas (una por fold) de una
+    combinación. C1–C3 deciden siempre; C4 (≥ 3 apuestas en cada fold) solo
+    decide si `require_c4`, y si no se informa como dato.
+
+    Un fold sin predicciones (lift NaN) no cuenta como lift positivo; media y
+    desviación se calculan sobre los folds con lift.
+    """
     lifts = fold_rows["lift"]
     positive = int((lifts > 0).sum())
     lift_mean = float(lifts.mean())
     lift_std = float(lifts.std(ddof=1))
     base_mean = float(fold_rows["vol_base_lift"].mean())
+    min_bets = int(fold_rows["n_bets"].min())
     criteria = {
         "folds_lift_pos": positive,
         "c1_lift_pos_4de5": positive >= 4,
@@ -207,10 +257,14 @@ def success_criteria(fold_rows: pd.DataFrame) -> dict[str, float | bool]:
         "c2_media_gt_std": lift_mean > lift_std,
         "vol_base_lift_mean": base_mean,
         "c3_gana_baseline": lift_mean > base_mean,
+        "min_apuestas_fold": min_bets,
+        "c4_3_apuestas": min_bets >= MIN_BETS_PER_FOLD,
+        "c4_decide": require_c4,
     }
-    criteria["cumple"] = bool(
-        criteria["c1_lift_pos_4de5"] and criteria["c2_media_gt_std"] and criteria["c3_gana_baseline"]
-    )
+    passed = criteria["c1_lift_pos_4de5"] and criteria["c2_media_gt_std"] and criteria["c3_gana_baseline"]
+    if require_c4:
+        passed = passed and criteria["c4_3_apuestas"]
+    criteria["cumple"] = bool(passed)
     return criteria
 
 
@@ -218,16 +272,19 @@ def combo_rows(results: pd.DataFrame, depth: int, leaf: int) -> pd.DataFrame:
     return results[(results["max_depth"] == depth) & (results["min_samples_leaf"] == leaf)]
 
 
-def verdict(name: str, results: pd.DataFrame, summary: pd.DataFrame) -> dict[str, object]:
+def verdict(exp: Experiment, results: pd.DataFrame, summary: pd.DataFrame) -> dict[str, object]:
     """Veredicto de la combinación elegida (mejor lift medio) y datos informativos."""
     depth, leaf = summary.index[0]
+    chosen = combo_rows(results, depth, leaf)
     passing = sum(
-        success_criteria(combo_rows(results, d, l))["cumple"] for d, l in summary.index
+        success_criteria(combo_rows(results, d, l), exp.require_c4)["cumple"]
+        for d, l in summary.index
     )
     return {
-        "experimento": name,
+        "experimento": exp.name,
         "elegida": f"{depth}/{leaf}",
-        **success_criteria(combo_rows(results, depth, leaf)),
+        **success_criteria(chosen, exp.require_c4),
+        "bet_precision_media": float(chosen["bet_precision"].mean()),
         "combos_que_cumplen": f"{passing}/{len(summary)}",
         "lift_mean_mediana": float(summary["lift_mean"].median()),
     }
@@ -255,26 +312,26 @@ def report(exp: Experiment, results: pd.DataFrame, summary: pd.DataFrame) -> Non
     depth, leaf = summary.index[0]
     print(f"\nDetalle por fold de la elegida (max_depth={depth}, min_samples_leaf={leaf}):")
     columns = ["fold", "base_rate", "n_pred_1", "precision_1", "lift",
-               "vol_base_precision", "vol_base_lift"]
+               "n_bets", "bet_precision", "vol_base_precision", "vol_base_lift"]
     print(combo_rows(results, depth, leaf)[columns].round(3).to_string(index=False))
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Walk-forward del árbol con target a futuro.")
     parser.add_argument("--data", type=Path, default=DEFAULT_SNAPSHOT)
-    parser.add_argument("--target", choices=["return", "vol", "both"], default="return")
+    parser.add_argument("--target", choices=[*TARGETS, "all"], default="return")
     args = parser.parse_args()
     pd.set_option("display.width", 160)
 
     prices = load_snapshot(args.data)
-    targets = ["return", "vol"] if args.target == "both" else [args.target]
+    targets = list(TARGETS) if args.target == "all" else [args.target]
     verdicts = []
     for target in targets:
         exp = prepare_experiment(prices, target)
         results = walk_forward(exp.split.X_train, exp.split.y_train, exp.vol)
         summary = summarize(results)
         report(exp, results, summary)
-        verdicts.append(verdict(exp.name, results, summary))
+        verdicts.append(verdict(exp, results, summary))
 
     print(f"\n{'=' * 30} Veredictos (criterios pre-registrados) {'=' * 30}")
     print(pd.DataFrame(verdicts).set_index("experimento").T.to_string())
