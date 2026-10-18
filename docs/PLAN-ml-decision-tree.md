@@ -211,6 +211,32 @@ solo datos. El test sigue sin evaluarse.
 - Métricas financieras: retorno total/CAGR, max drawdown, Sharpe, nº de operaciones
 - Bonus: `feature_importances_` y diagrama del árbol para explicar qué aprendió
 
+### Fase 4: backtest de los baselines (decidido el 2026-10-18, sin candidato ML)
+- **Periodos:** todo empieza el 2015-10-21, la primera EMA400 válida, también
+  buy & hold. El reporte separa train (con desglose por folds) y test.
+- **El periodo de test se usa para los baselines y queda consumido.** Ya se miró
+  en la fase 2 y se conoce su tasa base. Ver la sección 5.
+- **Estrategias:**
+  - Buy & hold.
+  - Reglas originales: `rule_signals` tal cual, incluida la rama
+    `> EMA400 × 1,15`. Se entra en largo con la señal de compra si se está
+    fuera y se sale con la de venta. Sin cortos.
+  - Baseline de volatilidad: entrada si `vol_30d` está por debajo de la mediana
+    del train, y salida a los 30 días. Usa la misma regla de entrada y de
+    bloqueo que C4.
+- **Ejecución:** apertura de t+1 para una señal al cierre de t. Comisión del
+  0,1 % por lado.
+- **Métricas, fijadas antes de ejecutar:**
+  - CAGR;
+  - máximo drawdown;
+  - Sharpe con 365 días por año;
+  - % de tiempo invertido;
+  - número de operaciones.
+- **Tests:**
+  - buy & hold y una estrategia de una sola operación, calculados a mano;
+  - comisiones aplicadas en la entrada y en la salida;
+  - ninguna decisión ejecutada en t usa información del propio día t.
+
 ## 3. Estructura de código propuesta
 ```
 ml/btc_decision_tree/
@@ -360,3 +386,9 @@ tendrá que apuntar al nuevo script y seguir escribiendo en
 - **Para la fase 4 (backtest):** en *triple barrier*, los días que expiran
   tienen etiqueta 0, pero sí tuvieron un retorno real, que puede ser positivo.
   El backtest debe usar el retorno de la operación, no la etiqueta.
+- **El periodo de test (2024-08-05 → 2026-10-16) está consumido (decidido el
+  2026-10-18).**
+  - Ya se miró en la fase 2, se conoce su tasa base y la fase 4 lo usa para los
+    baselines.
+  - Cualquier modelo futuro se valida **con datos posteriores al 2026-10-16**,
+    es decir, con un snapshot nuevo que empiece después de esa fecha.
