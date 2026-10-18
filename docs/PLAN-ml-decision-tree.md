@@ -283,6 +283,59 @@ Precisiones (aprobadas el 2026-10-18):
 y 70, EMA400 × 1,15 y × 1,25) se eligieron mirando el histórico de BTC. El
 único tramo fuera de muestra para ellas es el **post-publicación**.
 
+### Fase 5: gráficas en vivo y CI (decidido el 2026-10-18)
+**A) `btc-latest.png` (post original): se mantiene el modelo, de forma mantenible.**
+- Regenerar el árbol con `baseline.py` y la versión de scikit-learn del CI, y
+  guardarlo con otro nombre. Se conserva `models/decision_tree.plk`, que usan
+  los tests de la fase 2.
+- Verificar que `export_text` es idéntico al original y que las predicciones
+  son iguales en todo el histórico. Documentar en CLAUDE.md cómo regenerarlo.
+- Inferencia con el histórico completo desde 2014, lo que corrige la EMA400, y
+  con indicadores propios en lugar de pandas_ta. Comprobar que las features
+  coinciden con las del pipeline original en la ventana que se pinta.
+- Test: en esa ventana, las predicciones del modelo coinciden con `rule_signals`.
+
+**B) `btc-tracker.png` (Part 2): seguimiento fuera de muestra.**
+- En inglés y con dos líneas: reglas originales y buy & hold desde el
+  2025-12-13, con `simulate` y `rule_signals` de `backtest.py` y un 0,1 % de
+  comisión por lado.
+- La imagen incluye:
+  - el título "Out-of-sample since publication (2025-12-13)";
+  - la fecha de la última actualización;
+  - el retorno acumulado de cada línea en la leyenda;
+  - la nota "Rule-based signals, not a forecast. N trades so far".
+
+**C) CI**
+- Descargar el histórico completo en cada ejecución.
+- Ejecutar `pytest ml` antes del build: si falla, no hay deploy.
+- Quitar pandas_ta, y lo que ya no se use, de `requirements-ci.txt`.
+- Retirar `scripts/update_btc.py` cuando lo sustituya el código nuevo.
+
+**D) Aviso "Update" en el post original**, en el mismo push que A–C. Primero
+un borrador en inglés para revisarlo antes de hacer el commit.
+
+**Hallazgos al planificar (2026-10-18), que afectan a A:**
+- **`export_text` idéntico.** Solo se consigue entrenando con los datos
+  cortados en el 2025-12-13 (el día del entrenamiento original) y
+  `random_state=2`: coincide hasta 10 decimales, y también con las semillas
+  10, 14, 16, 23, 34, 40 y 46.
+  - Con el snapshot completo, o con `random_state=42`, cambia un nodo: un corte
+    en `Close` en lugar de `RSI`, cuyas dos ramas dan −1.
+  - El original se entrenó sin `random_state`, así que ese empate se resolvió
+    al azar. En todos los casos, las predicciones son iguales en todo el
+    histórico.
+- **Modelo == `rule_signals` no se cumple.** El árbol publicado difiere de las
+  reglas en 5 días de la ventana pintada (desde el 2022-12-01) y en 21 de todo
+  el histórico:
+  - El árbol compra con RSI ≤ 29,94 aunque el precio esté entre la EMA400 y
+    +15 %. Las reglas excluyen esa franja, pero las dos ramas de ese nodo dan
+    clase 1 y el árbol la "olvidó". Pasa en 3 días de la ventana y en 19 del
+    histórico.
+  - Las reglas compran con RSI entre 29,94 y 30 y el árbol no, porque su corte
+    es 29,94. Pasa en 2 días.
+- Las features con indicadores propios coinciden **exactamente** (diferencia 0)
+  con las de pandas_ta en la ventana pintada, y las predicciones también.
+
 ## 3. Estructura de código propuesta
 ```
 ml/btc_decision_tree/
