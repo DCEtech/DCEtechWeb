@@ -12,6 +12,20 @@ THIS BLOG EXPLORES TRADING STRATEGIES FOR LEARNING — NOT A FINANCIAL RECOMENDA
 
 <br>
 
+> **Update (October 2026):** After publishing this post, I took a closer look
+> at the model and found a fundamental flaw: the buy/sell labels were computed
+> from the same indicators the tree used as inputs. The 99% accuracy only shows
+> that the tree learned to copy my rules; it doesn't predict anything.
+> I redid the analysis properly (fixed data snapshot, walk-forward validation,
+> no look-ahead, success criteria written before seeing the results). None of
+> the new models found a reliable signal, and the original rules underperformed
+> simply holding Bitcoin. The full story is in Part 2 (coming soon).
+> The chart at the end of this post still shows the original model's signals,
+> kept for reference, but it now uses the full price history, which fixes a bug
+> in the EMA400 calculation.
+
+<br>
+
 First of all I'm not a profesional trader. Honestly, I do a little investing here and there, but mainly I´m a developer and a curious explorer of data. In this little blog, I'll show you a simple strategy that works suprisingly well with an unpredictable asset like Bitcoin. 
 
 <br>
