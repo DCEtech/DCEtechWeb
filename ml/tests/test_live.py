@@ -145,3 +145,10 @@ def test_simulation_is_off_unless_true(monkeypatch: pytest.MonkeyPatch, value: s
     monkeypatch.setattr(live, "download_ohlcv", lambda *args: random_prices(n=10))
     with pytest.raises(DataError, match="antigüedad"):  # descarga de verdad (datos de 2020)
         live.download_history(date(2026, 10, 18))
+
+
+def test_signed_percent_ticks() -> None:
+    assert live.format_signed_percent(10) == "+10%"
+    assert live.format_signed_percent(-30) == "−30%"
+    assert live.format_signed_percent(0) == "0%"
+    assert live.format_signed_percent(-0.2) == "0%"  # nada de "−0%"

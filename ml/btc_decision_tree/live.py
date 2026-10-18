@@ -32,7 +32,7 @@ matplotlib.use("Agg")  # sin pantalla (CI)
 import matplotlib.dates as mdates  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
 import pandas as pd  # noqa: E402
-from matplotlib.ticker import FuncFormatter, PercentFormatter  # noqa: E402
+from matplotlib.ticker import FuncFormatter  # noqa: E402
 from sklearn.tree import DecisionTreeClassifier  # noqa: E402
 
 from btc_decision_tree.backtest import (  # noqa: E402
@@ -118,6 +118,14 @@ def chart_style() -> Iterator[None]:
 def format_usd_thousands(value: float, _pos: int | None = None) -> str:
     """20000 → "$20k"."""
     return f"${value / 1000:,.0f}k"
+
+
+def format_signed_percent(value: float, _pos: int | None = None) -> str:
+    """Valor ya en %: 10 → "+10%", -30 → "−30%" (signo menos tipográfico), 0 → "0%"."""
+    if round(value) == 0:
+        return "0%"
+    sign = "+" if value > 0 else "\u2212"
+    return f"{sign}{abs(value):.0f}%"
 
 
 def out_of_market_spans(invested: pd.Series) -> list[tuple[pd.Timestamp, pd.Timestamp]]:
@@ -235,7 +243,7 @@ def plot_tracker(tracker: Tracker, path: Path, start: str = TRACKER_START) -> No
             color="white",
         )
         ax.set_ylabel("Cumulative return", color="white")
-        ax.yaxis.set_major_formatter(PercentFormatter(xmax=100, decimals=0))
+        ax.yaxis.set_major_formatter(FuncFormatter(format_signed_percent))
         ax.xaxis.set_major_locator(mdates.MonthLocator(interval=month_interval(curves.index)))
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
         # Leyenda fuera del gráfico, en una fila: no tapa ninguna línea sean cuales sean los datos.
