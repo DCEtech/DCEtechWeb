@@ -1,4 +1,5 @@
-Title: That´s Why I love Data! - F1 Telemetry Analysis
+Title: That's Why I love Data! - F1 Telemetry Analysis
+Slug: that-s-why-i-love-data-f1-telemetry-analysis
 Date: 2024-09-24
 Category: Data
 Tags: dataAnalysis, dataVisualization, f1, blog

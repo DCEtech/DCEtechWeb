@@ -15,7 +15,10 @@ Repo: github.com/DCEtech/DCEtechWeb (Pelican, tema propio, sin plugins).
   testeables. Nada de lógica importante solo en notebooks.
 - Daniel está aprendiendo: explicar la lógica de cada cambio, no solo el código.
 
-## 0. Estado actual del repo (fase 1 completada, 2026-10-16)
+## 0. Estado inicial del repo (2026-10-16), histórico
+
+*Así estaba el repo al empezar (fase 1). Se conserva como registro; el estado
+actual está en la sección 3 y en `CLAUDE.md`.*
 
 **Dónde está cada cosa**
 - Post: `content/AI Meets Investing Decision Trees for BTC and Stock Strategies.md`.
@@ -336,23 +339,33 @@ un borrador en inglés para revisarlo antes de hacer el commit.
 - Las features con indicadores propios coinciden **exactamente** (diferencia 0)
   con las de pandas_ta en la ventana pintada, y las predicciones también.
 
-## 3. Estructura de código propuesta
+## 3. Estructura del código (real, tras la fase 5)
 ```
-ml/btc_decision_tree/
-  data.py        # descarga + caché local
-  features.py    # indicadores y features (type hints)
-  labels.py      # construcción del target
-  model.py       # entrenamiento y validación walk-forward
-  backtest.py    # simulación con comisiones
-  plot.py        # genera images/btc-latest.png
-tests/
-  test_no_leakage.py  # alterar datos futuros no debe cambiar features en t
-requirements.txt      # versiones fijadas
+ml/
+  btc_decision_tree/
+    data.py               # descarga de yfinance y snapshots CSV en ml/data/
+    indicators.py         # EMA, RSI de Wilder y volatilidad, en pandas (sin pandas_ta)
+    features.py           # features relativas (fase 3) y de las reglas (add_rule_features)
+    features_original.py  # pipeline original con pandas_ta (solo baseline.py)
+    labels.py             # reglas originales y targets: retorno, vol y triple barrier
+    baseline.py           # fase 2: reproduce y regenera el árbol publicado
+    model.py              # fase 3: split con purga, walk-forward y criterios de éxito
+    backtest.py           # fase 4: planificación de operaciones, simulación y métricas
+    live.py               # fase 5: btc-latest.png y btc-tracker.png (lo ejecuta el CI)
+    paths.py              # rutas del repo y de los modelos
+  tests/                  # pytest; incluye test_no_leakage.py y test_live_model.py
+  data/                   # snapshot fijo de BTC-USD (versionado)
+  environment.yml         # entorno local ml_env (conda)
+  conftest.py
+models/
+  decision_tree.plk                    # árbol original (sklearn 1.6.1), tests de fidelidad
+  decision_tree_sklearn-1.9.1.joblib   # el mismo árbol regenerado; lo usa live.py
+scripts/update_charts.sh  # CI: ejecuta live.py y, si yfinance falla, reutiliza las PNG de gh-pages
+requirements-ci.txt       # versiones fijadas del CI (sin pandas_ta)
+.github/workflows/deploy.yml
 ```
-Notebook solo para exploración. La gráfica diaria pasará a generarse desde
-`plot.py`, que sustituirá a `scripts/update_btc.py`. El paso del workflow
-tendrá que apuntar al nuevo script y seguir escribiendo en
-`content/images/btc-latest.png`, que es la ruta que usa el post.
+Los notebooks solo sirven para explorar. El código importante está en
+`ml/btc_decision_tree/` y tiene tests.
 
 ## 4. Fases
 1. ~~Explorar el repo y completar los TODO de `CLAUDE.md`.~~ Hecho el 2026-10-16
@@ -526,16 +539,19 @@ tendrá que apuntar al nuevo script y seguir escribiendo en
 6. *Live tracker + next steps*: enlace a la gráfica y la idea de la Part 3.
 
 ## 5. Decisiones abiertas
-- ¿Post nuevo ("Part 2: making the Decision Tree actually learn") enlazado
-  desde el original, o reescribir el original? Recomendado: post nuevo. Contar
-  el error y su corrección demuestra más criterio que un post perfecto.
+- ~~¿Post nuevo o reescribir el original?~~ Decidido el 2026-10-18: **post nuevo
+  (Part 2)** y el original se queda tal cual, con un aviso "Update" al principio
+  que lo explica y que enlazará a la Part 2 cuando se publique.
 - ~~Horizonte y umbral del target.~~ Decidido el 2026-10-18: 30 días y +10 %
   (ver sección 2).
 - ¿Incluir una acción (p. ej. SPY) para cumplir el título "BTC and Stock"?
 - ~~¿Sustituir pandas_ta?~~ Decidido el 2026-10-18: el código nuevo usa
   indicadores propios y el baseline sigue con pandas_ta (ver sección 2).
-- ¿Qué hacer con la gráfica del post original cuando exista el modelo nuevo?
-  Opciones: congelarla o seguir mostrando las señales del modelo viejo.
+- ~~¿Qué hacer con la gráfica del post original?~~ Decidido el 2026-10-18
+  (opción 2b): **seguir mostrando las señales del modelo original**, marcada como
+  "kept for reference". Usa el árbol regenerado (idéntico) y el histórico completo,
+  así que el bug de la EMA400 queda corregido. El seguimiento fuera de muestra
+  va en una imagen aparte, `btc-tracker.png`, para la Part 2.
 - Limpiar `ml/environment.yml`: ahora es el export completo de `ml_env`
   (~154 líneas, con Jupyter y dependencias indirectas). Decidir qué dejar,
   por ejemplo solo las dependencias directas (`--from-history` más las de pip).
