@@ -405,7 +405,47 @@ tendrá que apuntar al nuevo script y seguir escribiendo en
      probando.
    - Según la regla de parada, se pasa a la fase 4 sin candidato. El test sigue
      sin evaluarse.
-4. Backtest y comparación con baselines.
+4. Backtest y comparación con baselines. Hecho el 2026-10-18, sin candidato ML.
+   - Código del commit 3803873, guardado antes de ejecutar, en `backtest.py`.
+   - 99 tests. Los anti-fuga fuerzan una señal en t con un choque de precio e
+     incluyen casos de control que detectan una estrategia que usa la señal de
+     mañana.
+   - Comando: `python -m btc_decision_tree.backtest`.
+
+   | Periodo | Estrategia | CAGR | Máx. DD | Sharpe | % invertido | Operaciones |
+   |---|---|---|---|---|---|---|
+   | Train 2015-10-21 → 2024-08-04 | Buy & hold | **84,2 %** | −83,4 % | **1,22** | 100 % | 1 |
+   | | Reglas originales (in-sample) | 28,2 % | −72,8 % | 0,78 | 45 % | 10 |
+   | | Baseline vol (mediana expansiva) | 36,4 % | −73,4 % | 0,87 | 68 % | 73 |
+   | Test 2024-08-05 → 2026-10-16 | Buy & hold | 16,5 % | −53,1 % | 0,56 | 100 % | 1 |
+   | | Reglas originales (in-sample) | −0,4 % | −39,6 % | 0,15 | 50 % | 2 |
+   | | Baseline vol | 21,2 % | −54,0 % | 0,65 | 99 % | 27 |
+   | Post-publicación 2025-12-13 → 2026-10-16 | Buy & hold | −11,6 % | −39,6 % | −0,06 | 100 % | 1 |
+   | | Reglas originales (**fuera de muestra**) | 4,1 % | −28,7 % | 0,30 | 84 % | 1 |
+   | | Baseline vol | −11,9 % | −39,1 % | −0,09 | 92 % | 10 |
+
+   Sharpe por fold (buy & hold / reglas / vol):
+   - fold 1: 1,71 / 2,09 / 2,70
+   - fold 2: 0,52 / 0,99 / 0,77
+   - fold 3: 1,91 / 0,98 / 2,10
+   - fold 4: −0,41 / −0,49 / −0,63
+   - fold 5: 1,54 / 1,24 / 1,52
+
+   Lectura:
+   - **En el periodo largo (train) ninguna estrategia bate a buy & hold**, ni en
+     CAGR ni en Sharpe. Las reglas originales ganan un 28 % anual frente a un
+     84 %, incluso siendo in-sample. Reducen el tiempo invertido, pero el
+     drawdown sigue en torno al −73 %.
+   - Por folds no hay un ganador estable: cada estrategia gana en algún tramo.
+     En el bajista de 2022 (fold 4) pierden todas.
+   - En el test, el baseline de vol queda algo por encima de buy & hold, pero
+     está invertido el 99 % del tiempo: en la práctica es buy & hold, y la
+     diferencia es ruido.
+   - En post-publicación, el único tramo fuera de muestra para las reglas, estas
+     ganan un 4,1 % frente a −11,6 %. Pero es **una sola operación** en 10
+     meses: es una anécdota, no una prueba.
+   - Esto contradice la frase del post original ("works surprisingly well"),
+     y conviene contarlo en el post nuevo.
 5. Adaptar el workflow existente, que ya funciona a diario.
    - Sustituir `update_btc.py` por `plot.py`.
    - Calcular los indicadores con el histórico completo, para corregir el bug de la EMA400.
