@@ -13,17 +13,43 @@ de la futura consultora Odoo, pero NO es el punto de entrada comercial.
   solo para el README.
 - Hosting: GitHub Pages (rama `gh-pages`), dominio www.danielcejudo.com (CNAME
   creado en CI).
-- Gráfica BTC: `.github/workflows/deploy.yml` corre en push a `main` y por cron
-  diario (06:00 UTC): `scripts/update_btc.py` carga `models/decision_tree.plk`,
-  predice y guarda `content/images/btc-latest.png`; luego build y deploy. La PNG
-  actualizada solo se publica en `gh-pages`, no se commitea a `main`.
-  CI estabilizado el 2026-10-17: runner `ubuntu-24.04`, todas las dependencias
-  fijadas en `requirements-ci.txt`, acciones con Node 24 (checkout@v5,
-  setup-python@v6, actions-gh-pages@v4) y lanzamiento manual con
-  `gh workflow run deploy.yml`. Pendiente: el CI carga el `.plk` (sklearn 1.6.1)
-  con sklearn 1.9.1 (`InconsistentVersionWarning`); se resuelve al reentrenar.
-  Revisar con `gh run list --workflow deploy.yml`. Los logs se obtienen con
-  `gh api repos/DCEtech/DCEtechWeb/actions/jobs/<job_id>/logs` (`gh run view --log` sale vacío).
+- **CI** (`.github/workflows/deploy.yml`), en push a `main`, por cron diario
+  (06:00 UTC) y a mano. Pasos:
+  1. instala `requirements-ci.txt`, todo fijado y sin pandas_ta;
+  2. `pytest ml`: si falla, no hay deploy;
+  3. `scripts/update_charts.sh`;
+  4. build de Pelican y deploy a `gh-pages`.
+  - Runner `ubuntu-24.04` y acciones con Node 24.
+  - Las PNG solo se publican en `gh-pages`; no se commitean a `main`.
+- **Gráficas diarias**: `scripts/update_charts.sh` ejecuta `ml/btc_decision_tree/live.py`.
+  - Descarga el histórico completo desde 2014 y genera dos imágenes:
+    - `btc-latest.png`: señales del árbol original, en el post original;
+    - `btc-tracker.png`: reglas frente a buy & hold desde el 2025-12-13, para la
+      Part 2.
+  - Si `live.py` sale con **código 3** (yfinance falla o los datos tienen más de
+    3 días), reutiliza las PNG de `gh-pages` que existan, avisa con
+    `::warning::` y publica. Con **otro código**, el job falla sin deploy.
+  - Para probar el fallback en GitHub:
+    `gh workflow run deploy.yml -f simulate_data_failure=true`. Solo existe en el
+    lanzamiento manual.
+- Revisar ejecuciones con `gh run list --workflow deploy.yml`. Los logs se
+  obtienen con `gh api repos/DCEtech/DCEtechWeb/actions/jobs/<job_id>/logs`,
+  porque `gh run view --log` sale vacío.
+- **Modelos**:
+  - `models/decision_tree.plk`: el árbol original, de sklearn 1.6.1. Solo lo
+    usan los tests de fidelidad.
+  - `models/decision_tree_sklearn-1.9.1.joblib`: el mismo árbol regenerado. Es
+    el que usa la gráfica.
+  - Para regenerarlo, desde `ml/`:
+    `python -m btc_decision_tree.baseline --end 2025-12-13 --random-state 2 --save ../models/decision_tree_sklearn-1.9.1.joblib`.
+    - `--end` corta los datos el día en que se entrenó el original.
+    - **La semilla 2 se eligió por fidelidad al desempate del original, no por
+      rendimiento**: con ella, `export_text` sale idéntico. Las predicciones son
+      las mismas con cualquier semilla.
+    - Si cambia la versión de sklearn del CI, se regenera con el nuevo nombre y
+      se actualiza `paths.py`.
+  - El árbol **no** copia las reglas al 100 %: difiere en 5 días desde el
+    2022-12-01, en dos zonas conocidas que comprueba `test_live_model.py`.
 - El código de entrenamiento del modelo NO está en el repo. Original en
   `../ML/BTCpriceOracle/` (relativo a la raíz del repo, fuera de git):
   `Untitled.ipynb` = mismo código que el post; `cleanPipeline.ipynb` = experimento
@@ -34,14 +60,17 @@ de la futura consultora Odoo, pero NO es el punto de entrada comercial.
   Versiones exportadas en `ml/environment.yml` (versionado en git).
 - Ejecutar: `conda run -n ml_env python <script>`.
 - Recrear: `conda env create -f ml/environment.yml`.
-- Ojo: `models/decision_tree.plk` es de scikit-learn 1.6.1, pero `ml_env` tiene la
-  1.8.0 y el CI la 1.9.1 (fijada en `requirements-ci.txt`).
+- `ml_env` y el CI usan scikit-learn 1.9.1. `ml_env` además tiene pandas_ta,
+  solo para el baseline de la fase 2 y los tests que comparan con él; en CI
+  esos 6 tests se saltan.
 
 ## Comandos
 - Build: `make html` (= `pelican content -o output -s pelicanconf.py`)
 - Servidor local con recarga: `make devserver` (http://localhost:8000)
 - Build producción: `make publish` (usa `publishconf.py`)
-- Regenerar gráfica: `python scripts/update_btc.py` (desde la raíz del repo)
+- Regenerar las gráficas: `bash scripts/update_charts.sh` desde la raíz del
+  repo, o `python -m btc_decision_tree.live --images-dir <carpeta>` desde
+  `ml/` para no tocar `content/images/`.
 - Publicar: push a `main` (GitHub Actions); `make github` existe pero no se usa.
 - ML (desde `ml/`, con `conda run -n ml_env`):
   - Tests: `python -m pytest` (o `python -m pytest ml` desde la raíz)
@@ -52,8 +81,9 @@ de la futura consultora Odoo, pero NO es el punto de entrada comercial.
   - Backtest de baselines (fase 4): `python -m btc_decision_tree.backtest`
     (train con mediana expansiva, folds, test y post-publicación). El test ya está
     consumido: un modelo futuro se valida con datos posteriores al 2026-10-16.
-  - `features.py` e `indicators.py` no usan pandas_ta; solo `features_original.py`
-    (para el baseline) lo usa.
+  - Gráficas diarias (fase 5): `python -m btc_decision_tree.live`.
+  - `features.py`, `indicators.py`, `backtest.py` y `live.py` no usan pandas_ta;
+    solo `features_original.py` (para el baseline) lo usa.
   - Snapshot nuevo de datos: `python -m btc_decision_tree.data --end YYYY-MM-DD`
     (`end` exclusivo). Los experimentos leen `DEFAULT_SNAPSHOT` de `data.py`,
     nunca yfinance directamente.

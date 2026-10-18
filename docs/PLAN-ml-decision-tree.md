@@ -499,16 +499,21 @@ tendrá que apuntar al nuevo script y seguir escribiendo en
      meses: es una anécdota, no una prueba.
    - Esto contradice la frase del post original ("works surprisingly well"),
      y conviene contarlo en el post nuevo.
-5. Adaptar el workflow existente, que ya funciona a diario.
-   - Sustituir `update_btc.py` por `plot.py`.
-   - Calcular los indicadores con el histórico completo, para corregir el bug de la EMA400.
-   - Commitear o versionar el modelo nuevo.
+5. ~~Adaptar el workflow existente.~~ Hecho el 2026-10-18 (decisiones y detalles
+   en la sección 2, "Fase 5"):
+   - `live.py` sustituye a `update_btc.py` y genera `btc-latest.png` y `btc-tracker.png`.
+   - El árbol está regenerado con sklearn 1.9.1, idéntico al original.
+   - Indicadores propios con el histórico completo, lo que corrige el bug de la EMA400.
+   - El CI ejecuta los tests antes del deploy y reutiliza las imágenes de `gh-pages`
+     si falla yfinance.
+   - Aviso "Update" añadido al post original.
 6. Escribir el post.
 
 **Orden de trabajo acordado (2026-10-18), tras la fase 4:**
-1. Fase 5: gráfica en vivo (Claude Code). **← ahora**
-2. Aviso "Update" en el post original.
-3. Part 2: la escribe Daniel en inglés y Claude la revisa.
+1. ~~Fase 5: gráfica en vivo (Claude Code).~~ Hecho el 2026-10-18.
+2. ~~Aviso "Update" en el post original.~~ Hecho el 2026-10-18. Al publicar la
+   Part 2, cambiar "Part 2 (coming soon)" por el enlace.
+3. Part 2: la escribe Daniel en inglés y Claude la revisa. **← siguiente**
 4. Part 3: volatilidad, cuando la Part 2 esté publicada (ver sección 5).
 
 **Índice de la Part 2:**
