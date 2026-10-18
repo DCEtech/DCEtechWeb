@@ -237,6 +237,52 @@ solo datos. El test sigue sin evaluarse.
   - comisiones aplicadas en la entrada y en la salida;
   - ninguna decisión ejecutada en t usa información del propio día t.
 
+Precisiones (aprobadas el 2026-10-18):
+1. **Contabilidad diaria**, con el valor de la cartera marcado al cierre:
+   - día de entrada (apertura de t+1): `Close/Open × (1 − 0,001)`;
+   - días con posición: `Close/Close anterior`;
+   - día de salida (apertura): `Open/Close anterior × (1 − 0,001)`;
+   - días fuera del mercado: 0.
+2. **Bordes de cada periodo.** Cada periodo (train, cada fold, test y
+   post-publicación) se simula por separado y empieza fuera del mercado.
+   - La primera entrada posible es en la apertura del segundo día. Buy & hold
+     entra en la apertura del primer día.
+   - Lo que siga abierto al final se liquida al cierre del último día, con
+     comisión.
+   - Una señal en el último día se ignora.
+3. **Periodos:**
+   - Train: 2015-10-21 → 2024-08-04, sin purga, porque no se entrena nada.
+   - Folds: las 5 ventanas de validación del walk-forward.
+   - Test: 2024-08-05 → 2026-10-16.
+   - **Post-publicación:** 2025-12-13, la fecha del post original según sus
+     metadatos en `content/`, → 2026-10-16.
+4. **Reglas originales:** `rule_signals` sobre la serie completa desde 2014, con
+   `features_original` (pandas_ta). Una compra con la posición abierta o una
+   venta estando fuera se ignoran.
+5. **Baseline de volatilidad:**
+   - Señal en i, entrada en la apertura de i+1 y salida en la apertura de i+31.
+   - Siguiente señal posible desde i+30.
+   - Si una salida y una nueva entrada coinciden, se cobran las dos comisiones y
+     cuentan como dos operaciones.
+6. **Métricas:**
+   - CAGR = `(final/inicial)^(365,25/días) − 1`;
+   - máximo drawdown sobre el valor diario de la cartera;
+   - Sharpe = `media/desv. × √365` de los retornos diarios, con tipo libre de
+     riesgo 0 y contando los días fuera;
+   - % de tiempo invertido = días con la posición abierta al cierre;
+   - número de operaciones = entradas.
+
+**Mediana del baseline de volatilidad, según el periodo:**
+- Train completo: **mediana expansiva**, la de `vol_30d` de todos los días
+  anteriores a t (solo pasado). `vol_30d` existe desde 2014-10, así que el
+  2015-10-21 ya hay un año de historia.
+- Folds: la mediana de la parte de train de cada fold.
+- Test y post-publicación: la mediana de todo el train (2015-10-21 → 2024-08-04).
+
+**Las reglas originales son in-sample en train y test.** Sus umbrales (RSI 30
+y 70, EMA400 × 1,15 y × 1,25) se eligieron mirando el histórico de BTC. El
+único tramo fuera de muestra para ellas es el **post-publicación**.
+
 ## 3. Estructura de código propuesta
 ```
 ml/btc_decision_tree/
