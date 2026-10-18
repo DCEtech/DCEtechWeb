@@ -7,6 +7,11 @@ on:
   schedule: 
       - cron: '0 6 * * *'
   workflow_dispatch:  # Permite lanzarlo a mano desde Actions o con `gh workflow run`
+    inputs:
+      simulate_data_failure:
+        description: "Simular un fallo de yfinance (live.py sale con código 3) para probar el fallback"
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -41,6 +46,10 @@ jobs:
       # Gráficas diarias (btc-latest.png y btc-tracker.png). Si yfinance falla,
       # reutiliza las de gh-pages y avisa; cualquier otro error para el job.
       - name: Update BTC charts
+        env:
+          # Solo 'true' si se lanza a mano con la casilla marcada; en push y cron
+          # el evento no es workflow_dispatch y la expresión da siempre 'false'.
+          SIMULATE_DATA_FAILURE: ${{ github.event_name == 'workflow_dispatch' && inputs.simulate_data_failure == true }}
         run: |
           bash scripts/update_charts.sh
 

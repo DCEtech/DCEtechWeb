@@ -124,3 +124,24 @@ def test_axis_formats() -> None:
     ten_months = pd.date_range("2025-12-13", "2026-10-17", freq="D")
     assert live.month_interval(ten_months) == 2      # 11 meses → una fecha cada 2
     assert live.month_interval(ten_months[:60]) == 1
+
+
+def test_simulated_data_failure_exits_with_download_failed_code(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    def must_not_download(*args: object) -> pd.DataFrame:
+        raise AssertionError("con la simulación activa no debe llegar a descargar")
+
+    monkeypatch.setattr(live, "download_ohlcv", must_not_download)
+    monkeypatch.setenv(live.SIMULATE_ENV, "true")
+    with pytest.raises(SystemExit) as exc_info:
+        live.main(["--images-dir", str(tmp_path)])
+    assert exc_info.value.code == live.DOWNLOAD_FAILED
+
+
+@pytest.mark.parametrize("value", ["", "false"])
+def test_simulation_is_off_unless_true(monkeypatch: pytest.MonkeyPatch, value: str) -> None:
+    monkeypatch.setenv(live.SIMULATE_ENV, value)
+    monkeypatch.setattr(live, "download_ohlcv", lambda *args: random_prices(n=10))
+    with pytest.raises(DataError, match="antigüedad"):  # descarga de verdad (datos de 2020)
+        live.download_history(date(2026, 10, 18))

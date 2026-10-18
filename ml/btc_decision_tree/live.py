@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import logging
 import math
+import os
 import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -53,6 +54,9 @@ SIGNALS_START = "2022-12-01"  # ventana que pinta el post original
 TRACKER_START = POST_PUBLICATION[0]
 MAX_STALENESS_DAYS = 3
 DOWNLOAD_FAILED = 3  # código de salida que el CI trata como "reutilizar imágenes"
+# Con SIMULATE_DATA_FAILURE=true la descarga falla a propósito (prueba del
+# fallback del CI; solo se activa al lanzar el workflow a mano).
+SIMULATE_ENV = "SIMULATE_DATA_FAILURE"
 
 # Las imágenes se ven a ~700 px de ancho en el blog: letra ~1,6× la de
 # matplotlib por defecto (10 pt de base, 12 pt el título).
@@ -95,6 +99,8 @@ def check_fresh(prices: pd.DataFrame, today: date, max_days: int = MAX_STALENESS
 
 def download_history(today: date) -> pd.DataFrame:
     """Histórico completo hasta ayer (el día en curso aún no ha cerrado)."""
+    if os.environ.get(SIMULATE_ENV, "").lower() == "true":
+        raise DataError(f"Fallo de descarga simulado ({SIMULATE_ENV}=true)")
     prices = download_ohlcv("BTC-USD", HISTORY_START, today.isoformat())
     check_fresh(prices, today)
     return prices
