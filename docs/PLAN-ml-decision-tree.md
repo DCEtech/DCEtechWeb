@@ -158,6 +158,50 @@ decida nada**, de:
 
 El test sigue sin evaluarse.
 
+### Experimento 3: *triple barrier* (decidido el 2026-10-18, último experimento)
+- Barreras simétricas `±b`, con `b = k · vol_30d[t] · √30`. Se usa la misma
+  `log_return_volatility` que en el experimento 2, y la barrera vertical está a
+  30 días.
+- Toques con el cierre diario:
+  - superior si `log(C[t+j] / C[t]) ≥ +b` para algún j entre 1 y 30;
+  - inferior si `≤ −b`.
+
+  El "mayor o igual" es porque llegar justo al nivel cuenta como tocar. Un mismo
+  día no puede tocar las dos.
+- Etiqueta 1 si toca primero la superior. Etiqueta 0 si toca primero la
+  inferior o si expira sin tocar ninguna.
+- Se descartan las últimas 30 filas aunque ya hayan tocado una barrera, para
+  que los tres experimentos usen las mismas filas y el mismo split.
+- `k` se calibra una sola vez con `calibrate_k` (generalizado), apuntando a una
+  tasa base de train del 37,5 %.
+  - La tasa no es monótona en k: sube de 53 % con k = 0 a 57 % con k = 0,2 y
+    luego baja. El 37,5 % solo se alcanza en un punto, hacia k ≈ 0,84, con un
+    ~35 % de días que expiran.
+  - Si la tasa obtenida queda fuera del 37–38 %, la ejecución se detiene y se
+    avisa.
+- Mismas features, split, purga (30), rejilla y baseline de volatilidad.
+
+**Apuesta = entrada.**
+- El primer día con predicción 1 abre una apuesta. No se cuenta otra hasta 30
+  días después (el horizonte), aunque el modelo siga prediciendo 1: la siguiente
+  entrada es posible en el día de entrada + 30.
+- Precision por apuesta = etiqueta del día de entrada.
+- Cada fold empieza sin apuesta abierta; el bloqueo no cruza folds.
+
+**Criterio de éxito (escrito antes de ver resultados):**
+- C1–C3 iguales que en el experimento 2.
+- **C4 (nuevo):** al menos 3 apuestas en cada uno de los 5 folds. Un fold con
+  menos hace fallar C4.
+
+Qué significa "cumple" en cada experimento:
+- Experimento 3: C1, C2, C3 y C4.
+- Experimentos 1 y 2: sigue siendo C1–C3, tal como se registró. Su C4 se informa
+  solo como dato.
+
+Se presenta una tabla conjunta de los 3 experimentos, con el número de
+combinaciones que cumplen y el lift medio de la combinación mediana, que son
+solo datos. El test sigue sin evaluarse.
+
 ### Evaluación
 - Métricas de clasificación: precision de la clase 1 (cuando dice "compra",
   ¿acierta?), matriz de confusión
@@ -277,3 +321,6 @@ tendrá que apuntar al nuevo script y seguir escribiendo en
 - **Regla de parada (decidida el 2026-10-18):** después del experimento 2, como
   mucho se prueba *triple barrier*. Luego se pasa a la fase 4 con el mejor
   candidato, o sin ninguno si ninguno cumple el criterio.
+- **Para la fase 4 (backtest):** en *triple barrier*, los días que expiran
+  tienen etiqueta 0, pero sí tuvieron un retorno real, que puede ser positivo.
+  El backtest debe usar el retorno de la operación, no la etiqueta.
