@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import pandas_ta as ta
 import pytest
 
 from btc_decision_tree.indicators import ema, log_return_volatility, rsi_wilder
@@ -49,6 +48,7 @@ def test_ema_matches_handwritten_loop(length: int) -> None:
 
 @pytest.mark.parametrize("length", [10, 55, 400])
 def test_ema_matches_pandas_ta_after_warmup(length: int) -> None:
+    ta = pytest.importorskip("pandas_ta")  # solo en local; el CI no instala pandas_ta
     series = random_walk()
     warmup = 10 * length
     ours = ema(series, length).iloc[warmup:]
@@ -65,6 +65,7 @@ def test_rsi_matches_handwritten_loop() -> None:
 def test_rsi_matches_pandas_ta_after_warmup() -> None:
     # pandas_ta no usa semilla SMA en el RSI: al principio difiere (hasta ~18
     # puntos) y converge. Tras 10 × length filas la diferencia es < 0.01 puntos.
+    ta = pytest.importorskip("pandas_ta")
     series = random_walk()
     warmup = 10 * 14
     ours = rsi_wilder(series, 14).iloc[warmup:]

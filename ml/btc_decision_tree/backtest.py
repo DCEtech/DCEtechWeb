@@ -25,7 +25,7 @@ import pandas as pd
 from sklearn.model_selection import TimeSeriesSplit
 
 from btc_decision_tree.data import DEFAULT_SNAPSHOT, load_snapshot
-from btc_decision_tree.features_original import add_original_features
+from btc_decision_tree.features import add_rule_features
 from btc_decision_tree.indicators import log_return_volatility
 from btc_decision_tree.labels import BUY, SELL, rule_signals
 from btc_decision_tree.model import HORIZON, N_SPLITS, VOL_WINDOW, build_dataset, split_train_test
@@ -195,7 +195,7 @@ def fold_windows(prices: pd.DataFrame) -> list[tuple[pd.Index, pd.Timestamp, pd.
 
 def run(prices: pd.DataFrame, fee: float = FEE) -> pd.DataFrame:
     """Tabla con una fila por (periodo, estrategia)."""
-    signals = rule_signals(add_original_features(prices))
+    signals = rule_signals(add_rule_features(prices))
     vol = log_return_volatility(prices["Close"], VOL_WINDOW)
     train_median = float(vol.loc[TRAIN[0] : TRAIN[1]].median())
 

@@ -14,7 +14,7 @@ from btc_decision_tree.backtest import (
     simulate,
     vol_trades,
 )
-from btc_decision_tree.features_original import add_original_features
+from btc_decision_tree.features import add_rule_features
 from btc_decision_tree.indicators import log_return_volatility
 from btc_decision_tree.labels import BUY, HOLD, SELL, rule_signals
 
@@ -130,7 +130,7 @@ RULES_PERIOD_START = 420
 
 def rules_trades_for(prices: pd.DataFrame, lookahead: int = 0) -> list[Trade]:
     """`lookahead=1` simula una estrategia tramposa que usa la señal de mañana."""
-    signals = rule_signals(add_original_features(prices)).shift(-lookahead)
+    signals = rule_signals(add_rule_features(prices)).shift(-lookahead)
     return rules_trades(signals, prices.index[RULES_PERIOD_START:])
 
 

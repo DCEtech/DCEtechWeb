@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
+pytest.importorskip("pandas_ta")  # baseline de la fase 2: solo en local
+
 from btc_decision_tree.features_original import add_original_features, ema
 
 
