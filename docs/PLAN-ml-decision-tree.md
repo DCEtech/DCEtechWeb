@@ -452,6 +452,21 @@ tendrá que apuntar al nuevo script y seguir escribiendo en
    - Commitear o versionar el modelo nuevo.
 6. Escribir el post.
 
+**Orden de trabajo acordado (2026-10-18), tras la fase 4:**
+1. Fase 5: gráfica en vivo (Claude Code). **← ahora**
+2. Aviso "Update" en el post original.
+3. Part 2: la escribe Daniel en inglés y Claude la revisa.
+4. Part 3: volatilidad, cuando la Part 2 esté publicada (ver sección 5).
+
+**Índice de la Part 2:**
+1. *The 99% that meant nothing*: por qué el modelo era circular.
+2. *Doing it properly*: snapshot fijo, sin fugas, criterios fijados antes de
+   ver los resultados.
+3. *Three honest attempts*: la tabla de los 3 experimentos.
+4. *Did the rules at least work?*: el backtest contra buy & hold.
+5. *What I learned*: el método importa más que el resultado.
+6. *Live tracker + next steps*: enlace a la gráfica y la idea de la Part 3.
+
 ## 5. Decisiones abiertas
 - ¿Post nuevo ("Part 2: making the Decision Tree actually learn") enlazado
   desde el original, o reescribir el original? Recomendado: post nuevo. Contar
