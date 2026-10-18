@@ -322,3 +322,18 @@ h3 img {
   background: none;
   color: inherit;
 }
+/* Citas y avisos (p. ej. "Update" en posts corregidos). Naranja #fc5404: el
+   mismo color que .sub-title--inherit, el aviso de "not a financial
+   recommendation"; el verde #04f38e queda reservado para los enlaces. */
+blockquote {
+  margin: 1.5rem 0;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid #fc5404;
+  background: rgba(252, 84, 4, 0.08);
+  border-radius: 0 4px 4px 0;
+}
+blockquote p:last-child { margin-bottom: 0; }
+/* Bulma (importado arriba) pinta <strong> en gris oscuro, pensado para fondo
+   blanco: sobre el fondo negro del tema las negritas eran casi invisibles. */
+strong { color: inherit; }
+blockquote strong { color: #fc5404; }
