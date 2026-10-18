@@ -478,3 +478,24 @@ tendrá que apuntar al nuevo script y seguir escribiendo en
     baselines.
   - Cualquier modelo futuro se valida **con datos posteriores al 2026-10-16**,
     es decir, con un snapshot nuevo que empiece después de esa fecha.
+
+### Ideas para Part 3 (no empezar hasta publicar Part 2)
+- **Hipótesis de Daniel:** la volatilidad baja indica acumulación y precede a
+  un movimiento fuerte. La estrategia sería:
+  - comprar en compresión (volatilidad baja);
+  - si rompe al alza, mantener hasta la siguiente compresión y vender;
+  - si rompe a la baja, comprar más en la siguiente compresión.
+- **Indicio exploratorio (in-sample):**
+  - en el cuartil de volatilidad más baja, el 45 % de los días acaban con una
+    subida > 10 % a 30 días;
+  - en los cuartiles centrales, entre el 29 % y el 32 %.
+
+  Pendiente medir también las caídas fuertes desde compresión.
+- **Por definir antes de ejecutar:**
+  - umbral de compresión (percentil expansivo);
+  - definición de ruptura;
+  - tamaño por compra;
+  - posición máxima.
+- **Baselines:** buy & hold, DCA mensual y el baseline de vol de la fase 4.
+- **Validación:** con datos posteriores al 2026-10-16, porque el test está
+  consumido.
