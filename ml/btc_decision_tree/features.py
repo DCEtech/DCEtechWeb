@@ -30,6 +30,26 @@ RELATIVE_FEATURES = [
 ]
 
 
+RULE_FEATURES = ["RSI", "EMA400", "Close", "dist_ema400"]
+
+
+def add_rule_features(prices: pd.DataFrame) -> pd.DataFrame:
+    """Columnas de la estrategia original (y del árbol publicado) con
+    indicadores propios: HL2, EMA400 (sobre HL2), RSI14 y dist_ema400.
+
+    Mismo resultado que `features_original.add_original_features` (pandas_ta)
+    tras el calentamiento, sin depender de pandas_ta. Incluye precios en bruto
+    (Close, EMA400): solo sirve para el modelo publicado y las reglas, no
+    para modelos nuevos.
+    """
+    df = prices.copy()
+    df["HL2"] = (df["High"] + df["Low"]) / 2
+    df["EMA400"] = ema(df["HL2"], EMA_LONG)
+    df["RSI"] = rsi_wilder(df["Close"], RSI_LENGTH)
+    df["dist_ema400"] = df["Close"] / df["EMA400"] - 1
+    return df
+
+
 def pct_change(series: pd.Series, periods: int) -> pd.Series:
     """Cambio porcentual respecto a `periods` filas antes."""
     return series / series.shift(periods) - 1

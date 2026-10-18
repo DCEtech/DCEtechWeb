@@ -5,6 +5,18 @@ este modelo NO predice el mercado: imita la estrategia de reglas.
 
 Uso (desde `ml/`):
     python -m btc_decision_tree.baseline
+
+Regenerar el modelo de la gráfica del post original (fase 5):
+    python -m btc_decision_tree.baseline --end 2025-12-13 --random-state 2 \\
+        --save ../models/decision_tree_sklearn-1.9.1.joblib
+
+- `--end 2025-12-13`: los datos que tenía el original, entrenado ese día.
+- `--random-state 2`: elegida por FIDELIDAD, no por rendimiento. El original
+  se entrenó sin `random_state` y resolvió al azar un empate entre dos cortes
+  (RSI o Close, ambos con las dos ramas en −1). La semilla 2 es la primera
+  que resuelve ese empate igual: `export_text` sale idéntico al de
+  `models/decision_tree.plk`. Las predicciones son las mismas con cualquier
+  semilla.
 """
 
 from __future__ import annotations
@@ -13,6 +25,7 @@ import argparse
 from dataclasses import dataclass
 from pathlib import Path
 
+import joblib
 import pandas as pd
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
@@ -68,11 +81,21 @@ def describe_period(index: pd.Index) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Reproduce el árbol publicado.")
     parser.add_argument("--data", type=Path, default=DEFAULT_SNAPSHOT)
+    parser.add_argument("--end", help="Usar solo datos hasta esta fecha (incluida)")
+    parser.add_argument("--random-state", type=int, default=RANDOM_STATE)
+    parser.add_argument("--save", type=Path, help="Guardar el árbol entrenado (joblib)")
     args = parser.parse_args()
 
-    X, y = build_dataset(load_snapshot(args.data))
+    prices = load_snapshot(args.data)
+    if args.end:
+        prices = prices.loc[: args.end]
+    X, y = build_dataset(prices)
     split = temporal_split(X, y)
-    clf = train_tree(split.X_train, split.y_train)
+    clf = train_tree(split.X_train, split.y_train, random_state=args.random_state)
+    if args.save:
+        args.save.parent.mkdir(parents=True, exist_ok=True)
+        joblib.dump(clf, args.save)
+        print(f"Modelo guardado en {args.save}")
     y_pred = clf.predict(split.X_test)
 
     print(f"Train: {describe_period(split.X_train.index)}")
