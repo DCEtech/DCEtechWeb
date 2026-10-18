@@ -92,3 +92,35 @@ def test_main_exits_with_download_failed_code(monkeypatch: pytest.MonkeyPatch, t
         live.main(["--images-dir", str(tmp_path)])
     assert exc_info.value.code == live.DOWNLOAD_FAILED
     assert not list(tmp_path.iterdir())  # no se escribe ninguna imagen
+
+
+# --- marcadores y ejes ----------------------------------------------------
+
+def test_tracker_entries_and_shading_come_from_the_trades() -> None:
+    prices = random_prices()
+    start = str(prices.index[500].date())
+    tracker = live.build_tracker(prices, start=start)
+
+    period = prices.loc[start:]
+    signals = rule_signals(add_rule_features(prices))
+    sim = simulate(period, live.rules_trades(signals, period.index))
+    assert tracker.entries == [period.index[t.entry] for t in sim.trades]
+    assert tracker.entries  # con estos datos las reglas operan
+    pd.testing.assert_series_equal(tracker.invested, sim.invested)
+
+
+def test_out_of_market_spans() -> None:
+    index = pd.date_range("2026-01-01", periods=7, freq="D")
+    invested = pd.Series([False, False, True, True, False, True, False], index=index)
+    assert live.out_of_market_spans(invested) == [
+        (index[0], index[1]), (index[4], index[4]), (index[6], index[6]),
+    ]
+    assert live.out_of_market_spans(pd.Series(True, index=index)) == []
+
+
+def test_axis_formats() -> None:
+    assert live.format_usd_thousands(20_000) == "$20k"
+    assert live.format_usd_thousands(125_000) == "$125k"
+    ten_months = pd.date_range("2025-12-13", "2026-10-17", freq="D")
+    assert live.month_interval(ten_months) == 2      # 11 meses → una fecha cada 2
+    assert live.month_interval(ten_months[:60]) == 1
