@@ -122,6 +122,42 @@ la tasa base del mismo periodo.
   combinación con mejor lift medio, mirando también el peor fold.
 - `random_state` fijo y snapshot de datos en disco (yfinance cambia).
 
+### Experimento 2: target ajustado por volatilidad (decidido el 2026-10-18)
+- `vol_30d` del target: desviación típica de los log-retornos diarios de los
+  últimos 30 días, hasta t incluido (solo pasado).
+- Etiqueta 1 si `log(C[t+30] / C[t]) > k · vol_30d · √30`.
+- `k` se calibra una sola vez para que la tasa base del train quede entre el 37 %
+  y el 38 %. La estimación previa era k ≈ 0,60, que da un 37,5 %. **Prohibido
+  ajustar k mirando el lift.**
+  - Se calibra con la tasa base de todo el train tras la purga, que incluye las
+    ventanas de validación del walk-forward. Es aceptable porque solo fija la
+    proporción de clases y no ajusta el modelo.
+- Mismas features, split, purga y rejilla de hiperparámetros que el experimento 1.
+  La feature `vol_30d` (retornos simples) no cambia.
+- Nuevo baseline: predice 1 si `vol_30d` (la de log-retornos) está por debajo de
+  su mediana en la parte de train de cada fold. Su precision y su lift se
+  reportan por fold junto a los del árbol. Es necesario porque, con vol alta, el
+  umbral sube y la etiqueta 1 es más difícil: un árbol podría "acertar" solo
+  aprendiendo esa relación mecánica.
+
+**Criterio de éxito (escrito antes de ver resultados).** Se aplica a la
+combinación elegida con la regla del experimento 1 (la de mejor lift medio):
+1. Lift > 0 en al menos 4 de los 5 folds.
+2. Lift medio > desviación típica muestral (`ddof=1`) de los 5 lifts.
+3. Lift medio del árbol > lift medio del baseline de volatilidad, en los
+   mismos 5 folds.
+
+Elegir la mejor de 20 combinaciones la favorece por azar, así que un
+cumplimiento justo en el límite se señalará.
+
+Se aplica también al experimento 1 (`--target return`), y los dos se presentan
+en la misma tabla de veredictos. Además se informa, **solo como dato y sin que
+decida nada**, de:
+- cuántas de las 20 combinaciones cumplen los 3 criterios;
+- el lift medio de la combinación mediana.
+
+El test sigue sin evaluarse.
+
 ### Evaluación
 - Métricas de clasificación: precision de la clase 1 (cuando dice "compra",
   ¿acierta?), matriz de confusión
@@ -208,3 +244,6 @@ tendrá que apuntar al nuevo script y seguir escribiendo en
 - Limpiar `ml/environment.yml`: ahora es el export completo de `ml_env`
   (~154 líneas, con Jupyter y dependencias indirectas). Decidir qué dejar,
   por ejemplo solo las dependencias directas (`--from-history` más las de pip).
+- **Regla de parada (decidida el 2026-10-18):** después del experimento 2, como
+  mucho se prueba *triple barrier*. Luego se pasa a la fase 4 con el mejor
+  candidato, o sin ninguno si ninguno cumple el criterio.
