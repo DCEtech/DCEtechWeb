@@ -47,8 +47,8 @@ de la futura consultora Odoo, pero NO es el punto de entrada comercial.
   - Tests: `python -m pytest` (o `python -m pytest ml` desde la raíz)
   - Modelo base (fase 2): `python -m btc_decision_tree.baseline`
   - Walk-forward del modelo nuevo (fase 3): `python -m btc_decision_tree.model
-    --target {return,vol,both}` (por defecto `return`; `both` imprime la tabla
-    de veredictos). No evalúa el test.
+    --target {return,vol,barrier,all}` (por defecto `return`; `all` imprime la
+    tabla de veredictos de los 3 experimentos). No evalúa el test.
   - `features.py` e `indicators.py` no usan pandas_ta; solo `features_original.py`
     (para el baseline) lo usa.
   - Snapshot nuevo de datos: `python -m btc_decision_tree.data --end YYYY-MM-DD`

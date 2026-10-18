@@ -297,6 +297,42 @@ tendrá que apuntar al nuevo script y seguir escribiendo en
      infla el resultado.
    - Siguiente paso, según la regla de parada: *triple barrier* como último
      experimento y después la fase 4.
+
+   Experimento 3 y tabla conjunta (2026-10-18, commit dfdc1cb,
+   `python -m btc_decision_tree.model --target all`; test NO evaluado).
+   Calibración: k = 0,83, con una tasa base de train del 37,5 %. Al cambiar el
+   código, los experimentos 1 y 2 dan los mismos números que antes.
+
+   | | Exp. 1: return | Exp. 2: vol k=0,60 | Exp. 3: barrier k=0,83 |
+   |---|---|---|---|
+   | Elegida | 6/100 | 2/200 | 2/200 |
+   | C1: lift > 0 en ≥ 4/5 | ✅ 4/5 | ✅ 4/5 | ✅ 4/5 |
+   | C2: media > desv. típica | ❌ 0,018 < 0,062 | ❌ 0,298 < 0,311 | ❌ 0,319 < 0,325 |
+   | C3: gana al baseline de vol | ❌ 0,018 < 0,056 | ✅ 0,298 > 0,094 | ✅ 0,319 > 0,108 |
+   | C4: ≥ 3 apuestas por fold | (dato) ✅ mín. 5 | (dato) ❌ mín. 1 | ❌ mín. 1 |
+   | **Cumple** | **No** | **No** | **No** |
+   | Precision media por apuesta (dato) | 0,36 | 0,57 | 0,62 |
+   | Combinaciones que cumplen (dato) | 0/20 | 0/20 | 0/20 |
+   | Lift medio de la combinación mediana (dato) | −0,082 | +0,018 | +0,141 |
+
+   Detalle del experimento 3 (2/200), por fold:
+
+   | Fold | Apuestas | Precision por apuesta | Lift diario |
+   |---|---|---|---|
+   | 1 | 1 | 1,00 | +0,625 |
+   | 2 | 6 | 0,50 | −0,098 |
+   | 3 | 3 | 0,67 | +0,538 |
+   | 4 | 3 | 0,67 | +0,490 |
+   | 5 | 8 | 0,25 | +0,041 |
+
+   **Conclusión de la fase 3: ningún candidato cumple los criterios.**
+   - El mejor fold de los experimentos 2 y 3 es una única apuesta (abril y mayo
+     de 2017).
+   - En el experimento 3, la combinación mediana (+0,14) es mejor que en los
+     anteriores. Es solo un dato: no cambia el veredicto ni justifica seguir
+     probando.
+   - Según la regla de parada, se pasa a la fase 4 sin candidato. El test sigue
+     sin evaluarse.
 4. Backtest y comparación con baselines.
 5. Adaptar el workflow existente, que ya funciona a diario.
    - Sustituir `update_btc.py` por `plot.py`.
