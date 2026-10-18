@@ -223,6 +223,36 @@ tendrá que apuntar al nuevo script y seguir escribiendo en
    - La tasa base cambia entre folds del 21 % al 54 %.
    - Siguiente paso, según lo decidido: probar un umbral ajustado por
      volatilidad y, si sigue sin haber señal, *triple barrier*.
+
+   Veredictos con los criterios pre-registrados (2026-10-18, commit 9130b3b,
+   `python -m btc_decision_tree.model --target both`; test NO evaluado):
+
+   | | Exp. 1: return > +10 % | Exp. 2: vol, k = 0,60 |
+   |---|---|---|
+   | Combinación elegida | 6/100 | 2/200 |
+   | C1: lift > 0 en ≥ 4/5 folds | ✅ 4/5 | ✅ 4/5 |
+   | C2: lift medio > desv. típica | ❌ 0,018 < 0,062 | ❌ 0,298 < 0,311 |
+   | C3: lift medio > baseline de vol | ❌ 0,018 < 0,056 | ✅ 0,298 > 0,094 |
+   | **Cumple** | **No** | **No** |
+   | Combinaciones que cumplen (dato) | 0/20 | 0/20 |
+   | Lift medio de la combinación mediana (dato) | −0,082 | +0,018 |
+
+   Lectura:
+   - **Experimento 1:** no hay señal, y el baseline de volatilidad, una regla de
+     una línea, tiene más lift que el árbol.
+   - **Experimento 2:** el lift medio es alto, pero no supera a la dispersión
+     entre folds (C2 falla por poco). Además, las predicciones de clase 1 están
+     muy agrupadas en el tiempo:
+     - fold 1: 16 días en **1 sola racha** (abril y mayo de 2017), con precision 1,0;
+     - fold 4: 67 días en 2 rachas;
+     - folds 2, 3 y 5: 8, 6 y 12 rachas.
+
+     Son muy pocas apuestas independientes, así que el lift alto puede deberse
+     al azar.
+   - La mediana de las 20 combinaciones está en +1,8 puntos: elegir la mejor
+     infla el resultado.
+   - Siguiente paso, según la regla de parada: *triple barrier* como último
+     experimento y después la fase 4.
 4. Backtest y comparación con baselines.
 5. Adaptar el workflow existente, que ya funciona a diario.
    - Sustituir `update_btc.py` por `plot.py`.
