@@ -39,6 +39,15 @@ def _wilder_average(values: pd.Series, length: int) -> pd.Series:
     return seeded.ewm(alpha=1 / length, adjust=False).mean()
 
 
+def log_return_volatility(close: pd.Series, window: int = 30) -> pd.Series:
+    """Desviación típica (muestral) de los log-retornos diarios de la ventana
+    de `window` días que termina en t (incluido)."""
+    _check_enough_rows(close, window + 1, f"Volatilidad{window}")
+    prices = close.astype(float)
+    log_returns = np.log(prices / prices.shift(1))
+    return log_returns.rolling(window).std()
+
+
 def rsi_wilder(close: pd.Series, length: int = 14) -> pd.Series:
     """RSI de Wilder (0-100). Las primeras `length` filas son NaN."""
     _check_enough_rows(close, length + 1, f"RSI{length}")

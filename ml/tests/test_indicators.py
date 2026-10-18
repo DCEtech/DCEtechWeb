@@ -3,7 +3,7 @@ import pandas as pd
 import pandas_ta as ta
 import pytest
 
-from btc_decision_tree.indicators import ema, rsi_wilder
+from btc_decision_tree.indicators import ema, log_return_volatility, rsi_wilder
 
 
 def random_walk(n: int = 6000, seed: int = 0) -> pd.Series:
@@ -84,3 +84,12 @@ def test_indicators_raise_with_too_few_rows() -> None:
         ema(short, 400)
     with pytest.raises(ValueError, match="RSI14"):
         rsi_wilder(short, 14)
+
+
+def test_log_return_volatility_matches_manual_std() -> None:
+    series = random_walk(n=200)
+    vol = log_return_volatility(series, 30)
+    t = 150
+    log_returns = np.log(series / series.shift(1)).iloc[t - 29 : t + 1]
+    assert np.isclose(vol.iloc[t], np.std(log_returns, ddof=1))
+    assert vol.iloc[:30].isna().all() and vol.iloc[30:].notna().all()

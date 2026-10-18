@@ -12,6 +12,7 @@ import pandas as pd
 import pytest
 
 from btc_decision_tree.features import add_relative_features
+from btc_decision_tree.indicators import log_return_volatility
 
 FeatureFn = Callable[[pd.DataFrame], pd.DataFrame]
 
@@ -54,3 +55,11 @@ def test_detector_catches_a_leaky_feature() -> None:
         return pd.DataFrame({"tomorrow": prices["Close"].shift(-1)})
 
     assert leaks(leaky, make_prices(), t=500)
+
+
+@pytest.mark.parametrize("t", [20, 30, 400, 798])
+def test_log_return_volatility_does_not_look_ahead(t: int) -> None:
+    def vol(prices: pd.DataFrame) -> pd.DataFrame:
+        return log_return_volatility(prices["Close"], 30).to_frame()
+
+    assert not leaks(vol, make_prices(), t)

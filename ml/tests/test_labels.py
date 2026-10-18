@@ -1,7 +1,16 @@
+import numpy as np
 import pandas as pd
 import pytest
 
-from btc_decision_tree.labels import BUY, HOLD, SELL, forward_return_target, rule_signals
+from btc_decision_tree.labels import (
+    BUY,
+    HOLD,
+    SELL,
+    calibrate_k,
+    forward_return_target,
+    rule_signals,
+    vol_adjusted_target,
+)
 
 
 def make_frame(rows: list[tuple[float, float, float]]) -> pd.DataFrame:
@@ -65,3 +74,44 @@ def test_forward_return_target_rejects_bad_horizon() -> None:
         forward_return_target(close, horizon=0)
     with pytest.raises(ValueError):
         forward_return_target(close, horizon=3)
+
+
+def random_close(n: int = 600, seed: int = 0) -> pd.Series:
+    rng = np.random.default_rng(seed)
+    return make_close(list(100 * np.exp(np.cumsum(rng.normal(0, 0.03, n)))))
+
+
+def test_vol_adjusted_target_matches_formula() -> None:
+    close = random_close()
+    k, horizon = 0.6, 30
+    target = vol_adjusted_target(close, k=k, horizon=horizon)
+    t = 200
+    log_returns = np.log(close / close.shift(1)).iloc[t - 29 : t + 1]
+    threshold = k * np.std(log_returns, ddof=1) * np.sqrt(horizon)
+    expected = int(np.log(close.iloc[t + horizon] / close.iloc[t]) > threshold)
+    assert target.loc[close.index[t]] == expected
+    # Sin futuro al final y sin volatilidad al principio.
+    assert target.index[0] == close.index[30]
+    assert target.index[-1] == close.index[-31]
+
+
+def test_vol_adjusted_target_with_k_zero_is_any_rise() -> None:
+    close = random_close()
+    target = vol_adjusted_target(close, k=0)
+    rose = (close.shift(-30) > close).astype(int).loc[target.index]
+    assert target.equals(rose.rename("target"))
+
+
+def test_calibrate_k_hits_target_rate_and_rate_falls_with_k() -> None:
+    close = random_close(n=2000)
+    train_index = close.index[30:1500]
+    k, rate = calibrate_k(close, train_index, target_rate=0.375)
+    assert abs(rate - 0.375) < 0.01
+    rates = [vol_adjusted_target(close, k=x).loc[train_index].mean() for x in (0.2, 0.6, 1.0)]
+    assert rates[0] >= rates[1] >= rates[2]
+
+
+def test_calibrate_k_rejects_train_rows_without_target() -> None:
+    close = random_close()
+    with pytest.raises(ValueError, match="no tienen target"):
+        calibrate_k(close, close.index)  # incluye las últimas 30 filas, sin futuro
