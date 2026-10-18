@@ -33,10 +33,16 @@ jobs:
         run: |
           echo "MPLBACKEND=Agg" >> $GITHUB_ENV
       
-      # Update BTC data and generate plot
-      - name: Update BTC plot
+      # Tests de ml/: si fallan, el job se para y no hay deploy
+      - name: Run ML tests
         run: |
-          python scripts/update_btc.py
+          python -m pytest ml -q -rs
+
+      # Gráficas diarias (btc-latest.png y btc-tracker.png). Si yfinance falla,
+      # reutiliza las de gh-pages y avisa; cualquier otro error para el job.
+      - name: Update BTC charts
+        run: |
+          bash scripts/update_charts.sh
 
       # Build Pelican site
       - name: Build site
