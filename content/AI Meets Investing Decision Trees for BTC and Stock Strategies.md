@@ -2,6 +2,7 @@ Title: AI Meets Investing: Decision Tree for BTC and Stock Strategies
 Date: 2025-12-13
 Category: AI
 Tags: AI, Decision Tree, Investing
+Description: A decision tree trained on EMA400 and RSI signals for Bitcoin, and an honest update on why its 99% accuracy only copied the rules.
 Author: Daniel
 
 <br>

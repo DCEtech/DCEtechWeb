@@ -2,6 +2,7 @@ Title: How to use Pelican: Markdown files, theme selection and customization.
 Date: 2024-09-12
 Category: WebDevelopment
 Tags: pelican, python, blog, web
+Description: How to use Pelican: write articles in Markdown, pick a community theme and customize it to build your own static website with Python.
 Author: Daniel
 
 <br>

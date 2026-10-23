@@ -2,6 +2,7 @@ Title: My Final Degree Project
 Date: 2025-03-01
 Category: MultiplatformDevelopment
 Tags: dataAnalysis, dataVisualization, webDevelopment, mobileDevelopment, blog
+Description: Financiero, my final degree project: a multiplatform finance app built with Python, Flet, MongoDB and Docker to track your savings.
 Author: Daniel
 
 <br>

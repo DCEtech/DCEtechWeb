@@ -2,6 +2,7 @@ Title: Why use OpenPGP standard?
 Date: 2024-09-20
 Category: Cybersecurity
 Tags: pgp, security, blog, e2ee
+Description: Why privacy matters and how the OpenPGP standard uses public and private keys to encrypt and sign emails and files end to end.
 Author: Daniel
 
 <br>

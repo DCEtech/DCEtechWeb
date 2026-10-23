@@ -3,6 +3,7 @@ Slug: that-s-why-i-love-data-f1-telemetry-analysis
 Date: 2024-09-24
 Category: Data
 Tags: dataAnalysis, dataVisualization, f1, blog
+Description: Analyzing F1 telemetry with Python, FastF1 and Matplotlib: comparing Piastri and Leclerc's lap times and the telemetry of the overtake lap.
 Author: Daniel
 
 <br>

@@ -2,6 +2,7 @@ Title: Hello World - How I Built this website?
 Date: 2024-09-12
 Category: WebDevelopment
 Tags: pelican, python, blog, web
+Description: Why I chose Pelican, a Python static site generator, to build this website, and the first steps to set up a Pelican site with a custom theme.
 Author: Daniel
 
 
