@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+          <title>DCEtech - Building a Secure Home Server (Part 1): A Raspberry Pi with OpenWrt as the Gatekeeper</title>
+        <link rel="stylesheet" href="./css/custom.css">
+        <link rel="icon" href="./images/logo.gif" type="image">
+        <meta charset="utf-8" />
+        <meta name="generator" content="Pelican" />
+
+
+
+    <meta name="description" content="How I isolated my home server from my family's network with a Raspberry Pi 3B running OpenWrt as a firewall, mistakes included." />
+
+    <meta name="tags" content="homelab" />
+    <meta name="tags" content="openwrt" />
+    <meta name="tags" content="raspberry-pi" />
+    <meta name="tags" content="network-segmentation" />
+    <meta name="tags" content="firewall" />
+    <meta name="tags" content="self-hosting" />
+
+</head>
+<body class="article-page">
+  <div class ="container">
+     <header class="header">
+         <h1>
+            <a href=".">
+                <img src="./images/logo.gif" class="is-rounded" width=150px height=150px alt="DCEtech logo">
+            </a>
+            <a href="./">DCEtech</a>
+         </h1>
+     </header>
+     <main>
+       <div class="columns-1">
+           </div>
+           <div class = "column is-7" id = "resumen">
+<section id="content" class="body">
+  <header class="article">
+    <h2 id="entrytitle">
+      <a href="./secure-home-server-part-1-segmented-network.html" rel="bookmark"
+         title="Permalink to Building a Secure Home Server (Part 1): A Raspberry Pi with OpenWrt as the Gatekeeper">Building a Secure Home Server (Part 1): A Raspberry Pi with OpenWrt as the Gatekeeper</a></h2>
+ 
+  </header>
+  <br>
+  <footer class="post-info">
+    <time class="published" datetime="2026-11-18T00:00:00+01:00">
+      18/11/2026
+    </time>
+ <br>
+    <address class="vcard author">
+      By           <a class="url fn" href="./author/daniel.html">Daniel</a>
+    </address>
+ &nbsp
+    <div class="category">
+      Category: <a href="./category/cybersecurity.html">Cybersecurity</a>
+    </div>
+ &nbsp
+    <div class="tags">
+      Tags:<a href="./tag/homelab.html">homelab</a><a href="./tag/openwrt.html">openwrt</a><a href="./tag/raspberry-pi.html">raspberry-pi</a><a href="./tag/network-segmentation.html">network-segmentation</a><a href="./tag/firewall.html">firewall</a><a href="./tag/self-hosting.html">self-hosting</a>    </div>
+  </footer><!-- /.post-info -->
+  <br>
+  <div class="entry-content">
+    <p>I have a small server at home. It runs a few Odoo instances in Docker, some demos for clients and a couple of personal tools. Sooner or later I want to publish some of those websites on the Internet, and that raises an uncomfortable question:</p>
+<blockquote>
+<p>If someone breaks into my server through one of those websites... what else can they reach?</p>
+</blockquote>
+<p>On a typical home network the answer is: <strong>everything</strong>. Your laptop, your phone, your smart TV, the router's admin page. The server sits on the same network as all of them, so a single compromised web app becomes a door into your whole house.</p>
+<p>This is the first post of a series where I build a home server that is <strong>actually</strong> secure, step by step, and at the end I attack it myself to prove it. In this first part I focus on the network: how to put the server in its own isolated zone, with a Raspberry Pi acting as the gatekeeper.</p>
+<p>I'm a developer, not a network engineer, so I'll explain every concept the way I needed it explained. I'll also show the mistakes I made, because honestly they taught me more than the things that worked the first time.</p>
+<h2>The series</h2>
+<ol>
+<li><strong>Network segmentation with a Raspberry Pi and OpenWrt</strong> (this post)</li>
+<li>Hardening the server: SSH keys, UFW, Docker and automatic security patches</li>
+<li>Publishing websites without Cloudflare</li>
+<li>Pentesting: attacking my own setup and publishing the results</li>
+</ol>
+<h2>Why segment the network?</h2>
+<p>The idea is simple. Instead of one big network where everyone can talk to everyone, we create <strong>two networks</strong> and put a firewall between them:</p>
+<ul>
+<li><strong>Home network:</strong> laptops, phones, TV. I consider it <em>untrusted</em> from the server's point of view.</li>
+<li><strong>Pro network:</strong> only the server. This is the part exposed to the Internet, so it's the one most likely to get compromised one day.</li>
+</ul>
+<p>The firewall enforces three rules:</p>
+<ol>
+<li>The server <strong>can</strong> reach the Internet (updates, APIs...).</li>
+<li>The server <strong>cannot</strong> reach anything in my home network.</li>
+<li>From home, the only thing that can enter the pro network is web traffic (ports 80 and 443) and SSH from <strong>one</strong> specific computer: mine.</li>
+</ol>
+<p>The best analogy I found is a building with a doorman and two doors: a main door to the street, which is watched and mostly locked, and an inner door to the office. The doorman (the Raspberry Pi) decides who goes where.</p>
+<h2>The architecture</h2>
+<div class="highlight"><pre><span></span><code>[INTERNET]
+    │
+    ▼
+[ISP router] ── home network 192.168.1.0/24 (laptops, phones, TV)
+    │
+    │ cable → Pi built-in Ethernet port (WAN)
+    ▼
+[Raspberry Pi 3B + OpenWrt] ── the &quot;doorman&quot;
+    │  eth0 (built-in)   = WAN  → 192.168.1.50 (home side)
+    │  eth1 (USB adapter) = LAN → 10.10.10.1/24 (pro side)
+    │  Port forwarding: 80, 443 → 10.10.10.10
+    │
+    │ cable → USB adapter
+    ▼
+[Ubuntu server] ── pro network 10.10.10.0/24
+       10.10.10.10, Docker containers listening only on 127.0.0.1
+</code></pre></div>
+
+<p>A Raspberry Pi 3B only has one Ethernet port, so I added a USB Ethernet adapter to get the second "door". One port faces the ISP router, the other faces the server.</p>
+<p><strong>Hardware limitations to be honest about:</strong> the Pi 3B's built-in port is 100 Mbps and shares the USB 2.0 bus with the adapter. For a few websites at home it's more than enough, but it's not a gigabit firewall. If you're buying hardware specifically for this, look at a dedicated router or a newer board.</p>
+<h3>A note for people in Spain: why no Cloudflare</h3>
+<p>Many homelab guides tell you to put Cloudflare in front of everything. In Spain, during football matches, ISPs have been blocking whole IP ranges (including Cloudflare's) as part of LaLiga's anti-piracy actions, which takes down completely unrelated websites. So my setup uses <strong>direct DNS</strong> (no proxy) with dynamic DNS, and a public IPv4 address from my ISP instead of sitting behind CG-NAT. I'll cover this in part 3.</p>
+<h2>Step 1: Building the OpenWrt image</h2>
+<p><a href="https://openwrt.org/">OpenWrt</a> is a Linux distribution for routers. Instead of downloading the generic image, I used the official <strong>Firmware Selector</strong>, which lets you build a custom image with the packages you choose.</p>
+<p>My choices:</p>
+<table>
+<thead>
+<tr>
+<th>Decision</th>
+<th>Choice</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Version</td>
+<td>OpenWrt 25.12</td>
+<td>Current stable branch. Note: 25.12 replaced <code>opkg</code> with <strong><code>apk</code></strong> as the package manager.</td>
+</tr>
+<tr>
+<td>Architecture</td>
+<td>64-bit (<code>bcm27xx/bcm2710</code>)</td>
+<td>The Pi 3B's CPU is ARMv8; 64-bit is its native mode.</td>
+</tr>
+<tr>
+<td>Image type</td>
+<td><code>squashfs-factory</code></td>
+<td>Read-only root filesystem with a <code>firstboot</code> factory reset. More robust against power cuts than <code>ext4</code>.</td>
+</tr>
+<tr>
+<td>Added packages</td>
+<td><code>kmod-usb-net-rtl8152</code>, <code>r8152-firmware</code>, <code>usbutils</code></td>
+<td>The driver for the USB adapter, baked into the image (more on this below).</td>
+</tr>
+<tr>
+<td>Removed packages</td>
+<td>Wi-Fi drivers and <code>wpad</code>, PPPoE, audio</td>
+<td><strong>A firewall should not have a radio.</strong> If someone accidentally enables a Wi-Fi access point, it bypasses the whole segmentation. What isn't installed can't be misconfigured.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The chicken-and-egg problem:</strong> without the USB adapter's driver there is no second port, and without a configured WAN there is no Internet to download the driver. That's why I added the driver to the image itself.</p>
+<p>Flashing the SD card from Linux:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Verify the download first (compare with the hash shown by the Firmware Selector)</span>
+sha256sum<span class="w"> </span>openwrt-*-rpi-3-squashfs-factory.img.gz
+
+<span class="c1"># Identify the SD card: run lsblk before AND after inserting it</span>
+lsblk<span class="w"> </span>-o<span class="w"> </span>NAME,SIZE,TYPE,MODEL,MOUNTPOINTS
+
+<span class="c1"># Write it (replace sdX with YOUR card — dd will wipe whatever you point it at)</span>
+gunzip<span class="w"> </span>-c<span class="w"> </span>openwrt-*-rpi-3-squashfs-factory.img.gz<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>sudo<span class="w"> </span>dd<span class="w"> </span><span class="nv">of</span><span class="o">=</span>/dev/sdX<span class="w"> </span><span class="nv">bs</span><span class="o">=</span>4M<span class="w"> </span><span class="nv">conv</span><span class="o">=</span>fsync<span class="w"> </span><span class="nv">status</span><span class="o">=</span>progress
+</code></pre></div>
+
+<blockquote>
+<p><strong>Mistake #1:</strong> my first download was the <em>generic</em> image, not my custom build. The Firmware Selector shows the generic files as soon as you choose the device; your custom image only exists after you click "Request build" and wait. I only noticed because I inspected the image before flashing it. Check that the filename includes a build hash.</p>
+</blockquote>
+<h2>Step 2: First boot (isolated!)</h2>
+<p>Out of the box, OpenWrt behaves like a brand new home router: it takes the address <strong>192.168.1.1</strong> and starts a <strong>DHCP server</strong>. That's the same address as most ISP routers. If you plug it into your home network you get an IP conflict, and your family's devices might start getting addresses from the Pi instead of the real router and lose Internet.</p>
+<p>So the first boot happens with a cable <strong>directly from my PC to the Pi</strong>, and the PC's Wi-Fi turned off (otherwise the PC would be on two different networks that both use 192.168.1.x).</p>
+<div class="highlight"><pre><span></span><code>ssh<span class="w"> </span>root@192.168.1.1
+passwd<span class="w">                      </span><span class="c1"># first thing: set a root password</span>
+</code></pre></div>
+
+<p>Then I moved the Pi's internal network to its final range, so it never collides with the home network again.</p>
+<blockquote>
+<p><strong>Mistake #2 (the big one):</strong> in OpenWrt 25.12, IP addresses are stored as a <strong>list in CIDR notation</strong> (<code>192.168.1.1/24</code>), not as address + netmask. I set the new address without the <code>/24</code>:</p>
+<p><code>sh
+uci set network.lan.ipaddr='10.10.10.1'   # WRONG on 25.12</code></p>
+<p>The Pi ended up with a <code>/32</code>, a network of exactly one address. The symptoms were confusing: my PC could see the Pi at the ARP level (<code>ip neigh</code> showed its MAC), but ping, SSH and DHCP all failed, because the Pi had no route back to anyone.</p>
+<p>The way back in was <strong>IPv6 link-local</strong>: every interface gets an automatic <code>fe80::</code> address that works on a direct cable regardless of IPv4 configuration.</p>
+<p>```bash</p>
+<h1>Find devices on the cable</h1>
+<p>ping -6 -c 3 ff02::1%enp39s0</p>
+<h1>SSH using the Pi's link-local address</h1>
+<p>ssh root@fe80::xxxx:xxxx:xxxx:xxxx%enp39s0
+```</p>
+<p>And the correct way to set the address:</p>
+<p><code>sh
+uci delete network.lan.ipaddr
+uci add_list network.lan.ipaddr='10.10.10.1/24'
+uci commit network</code></p>
+<p><strong>Lesson: always run <code>uci show</code> and look at how the configuration is actually stored before changing it.</strong></p>
+</blockquote>
+<p>After that: hostname, timezone, an <strong>ed25519 SSH key</strong> instead of a password, and a configuration backup with <code>sysupgrade -b</code>. Backups of a known-good state are what let you experiment without fear.</p>
+<h2>Step 3: The USB adapter that wasn't what it claimed to be</h2>
+<p>I bought a "Realtek RTL8153" gigabit USB adapter, which is the usual recommendation because Linux supports it well. When I plugged it into the Pi, it kept disconnecting and reconnecting every five seconds, and no <code>eth1</code> ever appeared.</p>
+<p><code>lsusb</code> gave it away:</p>
+<div class="highlight"><pre><span></span><code>ID 38a2:0153 TIH Corp USB NetCard
+</code></pre></div>
+
+<p>A genuine RTL8153 identifies itself as <code>0bda:8153</code> (<code>0bda</code> is Realtek's vendor ID). This was a <strong>clone</strong> with an unknown vendor ID, so the Realtek driver ignored it. Linux picks drivers by that ID, and when nobody claimed the device it kept resetting itself.</p>
+<p>To find out what it really was, I plugged it into my Ubuntu PC, which ships with far more drivers:</p>
+<div class="highlight"><pre><span></span><code>lsusb<span class="w"> </span>-t<span class="w">     </span><span class="c1"># shows which driver claimed each USB device</span>
+</code></pre></div>
+
+<p>It turned out to be a device that speaks <strong>RNDIS</strong> (a Microsoft protocol, the same one Android uses for USB tethering) and <strong>CDC Ethernet</strong>, the standard USB networking class. On OpenWrt I needed <code>kmod-usb-net</code>, <code>kmod-usb-net-cdc-ether</code> and <code>kmod-usb-net-rndis</code>.</p>
+<p>The Pi still had no Internet, so I downloaded the packages on my PC from the exact kernel modules folder of my release (<code>cat /etc/apk/repositories.d/distfeeds.list</code> on the Pi tells you which one), copied them over with <code>scp -O</code>, and installed them offline:</p>
+<div class="highlight"><pre><span></span><code>apk<span class="w"> </span>add<span class="w"> </span>--no-network<span class="w"> </span>--allow-untrusted<span class="w"> </span>kmod-usb-net*.apk
+</code></pre></div>
+
+<p>Two things worth knowing:</p>
+<ul>
+<li><strong>Kernel modules must match the exact kernel build.</strong> A module from a slightly different version will not load. Always use the folder your device points to.</li>
+<li><code>apk</code> verifies packages through the <strong>signed repository index</strong>, not individually. Offline, it can't check that index, so it reports <code>UNTRUSTED signature</code>. <code>--allow-untrusted</code> is acceptable here because I downloaded the files myself over HTTPS from the official server. For a client I'd go the strict way: download the signed index too and use it as a local repository.</li>
+</ul>
+<p>With the drivers in place the adapter came up as <code>eth1</code>, using the standard <code>cdc_ether</code> driver, and it stayed stable after reboots.</p>
+<blockquote>
+<p><strong>Lesson:</strong> cheap "branded" network adapters are often clones. Check the USB ID (<code>lsusb</code>) as soon as it arrives. For production, buy hardware with a chip you can identify.</p>
+</blockquote>
+<h2>Step 4: Two zones, two doors</h2>
+<p>OpenWrt's firewall works with <strong>zones</strong>. By default there are two:</p>
+<ul>
+<li><code>lan</code>: trusted, everything allowed.</li>
+<li><code>wan</code>: the outside, incoming traffic rejected.</li>
+</ul>
+<p>In my design, <code>wan</code> is my <strong>home network</strong> and <code>lan</code> is the <strong>pro network</strong>. The steps, in an order that never left me without a way in:</p>
+<ol>
+<li>Add <code>eth1</code> (the adapter) to the LAN bridge <strong>without removing</strong> <code>eth0</code>, so both ports serve the pro network for a while.</li>
+<li>Move my PC's cable to the adapter and confirm I can still log in.</li>
+<li>Only then remove <code>eth0</code> from the bridge and turn it into the WAN.</li>
+</ol>
+<div class="highlight"><pre><span></span><code>uci<span class="w"> </span>add_list<span class="w"> </span>network.@device<span class="o">[</span><span class="m">0</span><span class="o">]</span>.ports<span class="o">=</span><span class="s1">&#39;eth1&#39;</span>
+<span class="c1"># ...test access through the adapter...</span>
+uci<span class="w"> </span>del_list<span class="w"> </span>network.@device<span class="o">[</span><span class="m">0</span><span class="o">]</span>.ports<span class="o">=</span><span class="s1">&#39;eth0&#39;</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>network.wan<span class="o">=</span>interface
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>network.wan.device<span class="o">=</span><span class="s1">&#39;eth0&#39;</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>network.wan.proto<span class="o">=</span><span class="s1">&#39;static&#39;</span>
+uci<span class="w"> </span>add_list<span class="w"> </span>network.wan.ipaddr<span class="o">=</span><span class="s1">&#39;192.168.1.50/24&#39;</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>network.wan.gateway<span class="o">=</span><span class="s1">&#39;192.168.1.1&#39;</span>
+uci<span class="w"> </span>add_list<span class="w"> </span>network.wan.dns<span class="o">=</span><span class="s1">&#39;9.9.9.9&#39;</span>
+uci<span class="w"> </span>add_list<span class="w"> </span>network.wan.dns<span class="o">=</span><span class="s1">&#39;149.112.112.112&#39;</span>
+uci<span class="w"> </span>changes<span class="w"> </span>network<span class="w">     </span><span class="c1"># review BEFORE committing</span>
+uci<span class="w"> </span>commit<span class="w"> </span>network
+service<span class="w"> </span>network<span class="w"> </span>restart
+</code></pre></div>
+
+<p>Some decisions here that are easy to get wrong:</p>
+<ul>
+<li><strong>Static IP outside the router's DHCP pool.</strong> My first choice was <code>.250</code>, which "looked high enough". When I checked the ISP router, its pool was <code>.128</code> to <code>.254</code>, so <code>.250</code> would eventually have been handed to my phone. Check the pool, don't assume. Addresses <code>.2</code> to <code>.127</code> were free.</li>
+<li><strong>Don't depend on the ISP router's configuration</strong> when you can avoid it. ISP technicians reset those routers without asking. A static IP outside the default pool survives a factory reset; a shrunk DHCP pool doesn't.</li>
+<li><strong>DNS:</strong> I used Quad9 instead of Cloudflare's resolvers, for the same reason as above.</li>
+<li>Check that OpenWrt <strong>won't serve DHCP on the WAN</strong> (<code>uci show dhcp.wan</code> should show <code>ignore='1'</code>).</li>
+</ul>
+<blockquote>
+<p><strong>Mistake #3:</strong> when I moved the Pi next to the ISP router, I plugged the router into the <strong>USB adapter</strong> instead of the built-in port. For a few minutes the pro network, with its DHCP server and IPv6 announcements, was inside my home network. I later found IPv6 addresses from the Pi's internal prefix on my server: the evidence. <strong>Built-in port → ISP router. Adapter → server.</strong> Label your cables.</p>
+</blockquote>
+<h2>Step 5: Managing the Pi from another room</h2>
+<p>My PC is in a different room from the router, so the direct cable was no longer an option. The firewall blocks SSH from the home network on purpose, so I opened exactly <strong>one</strong> exception: SSH from my PC's IP address.</p>
+<p>That required my PC to always have the same address, so I created a <strong>DHCP reservation</strong> on the ISP router (MAC → IP), and then the firewall rule on the Pi:</p>
+<div class="highlight"><pre><span></span><code>uci<span class="w"> </span>add<span class="w"> </span>firewall<span class="w"> </span>rule
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.name<span class="o">=</span><span class="s1">&#39;Allow-SSH-Admin-PC&#39;</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.src<span class="o">=</span><span class="s1">&#39;wan&#39;</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.src_ip<span class="o">=</span><span class="s1">&#39;192.168.1.132&#39;</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.proto<span class="o">=</span><span class="s1">&#39;tcp&#39;</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.dest_port<span class="o">=</span><span class="s1">&#39;22&#39;</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.target<span class="o">=</span><span class="s1">&#39;ACCEPT&#39;</span>
+uci<span class="w"> </span>commit<span class="w"> </span>firewall
+service<span class="w"> </span>firewall<span class="w"> </span>restart
+</code></pre></div>
+
+<p>Firewall changes only take effect after <code>uci commit firewall</code> and <code>service firewall restart</code>. I leave those two lines out of the next blocks to keep them short.</p>
+<blockquote>
+<p><strong>Mistake #4:</strong> the next day, SSH said <code>Connection refused</code>. My PC had a different IP. The reservation on the router had a typo in the MAC address (two hex pairs swapped), so the router silently ignored it, and the day before I had simply been lucky enough to get the right IP. <strong>Never type MAC or IP addresses by hand. Copy and paste.</strong></p>
+</blockquote>
+<h2>Step 6: Turning the Pi into a bunker</h2>
+<p>This is the core of the whole setup.</p>
+<h3>6.1 The server can't reach home</h3>
+<p>OpenWrt's defaults let <code>lan</code> forward to <code>wan</code>, because that's how a LAN reaches the Internet. But in my design <code>wan</code> is also my home network, so I added an explicit block:</p>
+<div class="highlight"><pre><span></span><code>uci<span class="w"> </span>add<span class="w"> </span>firewall<span class="w"> </span>rule
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.name<span class="o">=</span><span class="s1">&#39;Block-LANPRO-to-Home&#39;</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.src<span class="o">=</span><span class="s1">&#39;lan&#39;</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.dest<span class="o">=</span><span class="s1">&#39;wan&#39;</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.dest_ip<span class="o">=</span><span class="s1">&#39;192.168.1.0/24&#39;</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.proto<span class="o">=</span><span class="s1">&#39;all&#39;</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.target<span class="o">=</span><span class="s1">&#39;REJECT&#39;</span>
+</code></pre></div>
+
+<p>A common doubt: <em>if the server reaches the Internet through the home router, doesn't this cut its Internet access?</em> No. The firewall looks at the <strong>final destination</strong> of each packet. A request to a website has that website as its destination; the router is just the path.</p>
+<h3>6.2 The server can't reach the Pi itself</h3>
+<p>This one is easy to miss. The <code>lan</code> zone is marked as trusted (<code>input ACCEPT</code>), which makes sense in a normal home router. But here, the LAN is the zone exposed to the Internet. If an attacker took over the server and then reached the Pi's SSH or web interface, they could <strong>turn off the firewall</strong>. The Pi is the master key, so it must be unreachable.</p>
+<p>So: reject everything from the pro network to the Pi, except the three things the server genuinely needs.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Allow only what the server needs from the Pi</span>
+uci<span class="w"> </span>add<span class="w"> </span>firewall<span class="w"> </span>rule
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.name<span class="o">=</span><span class="s1">&#39;Allow-LAN-DHCP&#39;</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.src<span class="o">=</span><span class="s1">&#39;lan&#39;</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.proto<span class="o">=</span><span class="s1">&#39;udp&#39;</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.dest_port<span class="o">=</span><span class="s1">&#39;67 547&#39;</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.target<span class="o">=</span><span class="s1">&#39;ACCEPT&#39;</span>
+
+uci<span class="w"> </span>add<span class="w"> </span>firewall<span class="w"> </span>rule
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.name<span class="o">=</span><span class="s1">&#39;Allow-LAN-DNS&#39;</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.src<span class="o">=</span><span class="s1">&#39;lan&#39;</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.proto<span class="o">=</span><span class="s1">&#39;tcp udp&#39;</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.dest_port<span class="o">=</span><span class="s1">&#39;53&#39;</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.target<span class="o">=</span><span class="s1">&#39;ACCEPT&#39;</span>
+
+uci<span class="w"> </span>add<span class="w"> </span>firewall<span class="w"> </span>rule
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.name<span class="o">=</span><span class="s1">&#39;Allow-LAN-ICMP&#39;</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.src<span class="o">=</span><span class="s1">&#39;lan&#39;</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.proto<span class="o">=</span><span class="s1">&#39;icmp&#39;</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@rule<span class="o">[</span>-1<span class="o">]</span>.target<span class="o">=</span><span class="s1">&#39;ACCEPT&#39;</span>
+
+<span class="c1"># Then close the door</span>
+uci<span class="w"> </span><span class="nb">set</span><span class="w"> </span>firewall.@zone<span class="o">[</span><span class="m">0</span><span class="o">]</span>.input<span class="o">=</span><span class="s1">&#39;REJECT&#39;</span>
+</code></pre></div>
+
+<p>The order matters: first the exceptions, then close the door, so the server never loses DNS in between.</p>
+<blockquote>
+<p><strong>Mistake #5:</strong> in my notes, the "how to undo this" commands were right below the "apply" commands. I copied one line too many and committed <code>input='ACCEPT'</code>, so the door stayed open. Keep rollback instructions clearly separated from the apply steps.</p>
+</blockquote>
+<h3>6.3 Everything else</h3>
+<ul>
+<li><strong>SSH with keys only</strong> on the Pi (Dropbear: <code>PasswordAuth</code> and <code>RootPasswordAuth</code> off), tested from a <em>second</em> terminal while keeping the first session open.</li>
+<li><strong>Disabled default rules I don't use</strong>, such as the IPSec VPN pass-through rules. Disabled, not deleted, so they're easy to restore.</li>
+<li><strong>Port forwarding (DNAT)</strong> for 80 and 443 to the server. OpenWrt's fw4 also creates NAT reflection rules automatically.</li>
+<li>The <strong>LuCI web interface</strong> is only accessed through an SSH tunnel, never exposed.</li>
+</ul>
+<h2>Step 7: Moving the server behind the Pi</h2>
+<p>The cleanest trick of the whole project: the server already got its IP via DHCP. Instead of editing its network configuration, I created a <strong>DHCP reservation on the Pi</strong> for the server's MAC address, and then simply moved its cable from the ISP router to the Pi's adapter. The server asked for an address, the Pi gave it <code>10.10.10.10</code>, done.</p>
+<p>The rollback plan was just as simple: plug the cable back into the ISP router.</p>
+<p>To reach the server from my PC, I didn't open any new port. SSH's <code>ProxyJump</code> uses the Pi as a stepping stone:</p>
+<div class="highlight"><pre><span></span><code># ~/.ssh/config on my PC
+Host server
+    HostName 10.10.10.10
+    User myuser
+    ProxyJump pi
+    IdentityFile ~/.ssh/id_ed25519_server
+</code></pre></div>
+
+<p><code>ssh server</code> connects to the Pi (already allowed), and from the Pi to the server.</p>
+<h2>Verification: don't assume, prove</h2>
+<p>The tests I ran from the server, with the actual results:</p>
+<table>
+<thead>
+<tr>
+<th>Test from the server</th>
+<th>Expected</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ping 9.9.9.9</code></td>
+<td>Internet works</td>
+<td>✅ replies</td>
+</tr>
+<tr>
+<td><code>ping</code> to my PC</td>
+<td>Blocked</td>
+<td>❌ <code>Destination Port Unreachable</code> <strong>from 10.10.10.1</strong>, so the Pi is the one stopping it</td>
+</tr>
+<tr>
+<td><code>ping</code> to the ISP router</td>
+<td>Blocked</td>
+<td>❌ same</td>
+</tr>
+<tr>
+<td><code>nslookup</code> a domain</td>
+<td>DNS works</td>
+<td>✅ resolves</td>
+</tr>
+<tr>
+<td><code>nc -zv 10.10.10.1 22</code> (Pi's SSH)</td>
+<td>Blocked</td>
+<td>❌ <code>Connection refused</code></td>
+</tr>
+<tr>
+<td><code>nc -zv 10.10.10.1 80</code> (Pi's web UI)</td>
+<td>Blocked</td>
+<td>❌ <code>Connection refused</code></td>
+</tr>
+</tbody>
+</table>
+<p>On the Pi, the block rule has a packet counter, and it went up by exactly the number of packets I tried to send:</p>
+<div class="highlight"><pre><span></span><code>nft<span class="w"> </span>list<span class="w"> </span>ruleset<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s1">&#39;Block-LANPRO&#39;</span>
+<span class="c1"># ... counter packets 6 bytes 504 jump reject_to_wan ...</span>
+</code></pre></div>
+
+<p>In part 4 I'll do this formally from three positions (from the Internet, from a "compromised" device at home, and from a "compromised" server) and publish the results.</p>
+<h2>Lessons learned</h2>
+<ol>
+<li><strong>Look at the real configuration before changing it.</strong> Versions change formats (<code>/24</code> in OpenWrt 25.12).</li>
+<li><strong>Always keep a way back in.</strong> A second terminal, a direct cable, IPv6 link-local, a backup from <code>sysupgrade -b</code>, and a keyboard and screen as a last resort.</li>
+<li><strong>Copy and paste addresses.</strong> A MAC typo fails silently.</li>
+<li><strong>Check, don't assume:</strong> DHCP pools, free IPs (<code>ping</code> before using one), which physical port is which.</li>
+<li><strong>Least privilege, also towards your own firewall.</strong> The network behind the firewall is the one exposed to the Internet; don't trust it.</li>
+<li><strong>What isn't installed can't be attacked.</strong> No Wi-Fi on the firewall, no unused VPN rules.</li>
+<li><strong>Verify with tests</strong>, including the ones that are supposed to fail.</li>
+</ol>
+<h2>What's next</h2>
+<p>In <strong>part 2</strong> I harden the server itself, because the Pi is the wall but the house still needs a lock: SSH with ed25519 keys only, UFW (and why Docker bypasses it), keeping containers bound to <code>127.0.0.1</code>, removing unnecessary services, and automatic security patches.</p>
+<p>If you're building something similar and get stuck, feel free to get in touch through the contact page.</p>
+  </div><!-- /.entry-content -->
+</section>
+           </div>
+       </div>
+     </main>
+     <footer class ="footer">
+         <address id="about" class="vcard body">
+              Proudly powered by <a href="https://getpelican.com/">Pelican</a>,
+              which takes great advantage of <a href="https://www.python.org/">Python</a>.
+         </address><!-- /#about -->
+     </footer><!-- /#contentinfo -->
+  </div>
+</body>
+</html>

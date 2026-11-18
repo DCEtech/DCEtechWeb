@@ -337,3 +337,14 @@ blockquote p:last-child { margin-bottom: 0; }
    blanco: sobre el fondo negro del tema las negritas eran casi invisibles. */
 strong { color: inherit; }
 blockquote strong { color: #fc5404; }
+
+/* Listas y tablas dentro de los posts. El reset de Bulma quita viñetas,
+   numeración y el padding de las celdas. Limitado a .entry-content
+   para no tocar la barra lateral ni la navegación. */
+.entry-content ul { list-style: disc; margin-left: 1.5rem; }
+.entry-content ol { list-style: decimal; margin-left: 1.5rem; }
+.entry-content li { margin-bottom: 0.3rem; }
+.entry-content table { border-collapse: collapse; width: 100%; margin: 0.5rem 0; }
+.entry-content th,
+.entry-content td { border: 1px solid #333333; padding: 0.4rem 0.6rem; text-align: left; vertical-align: top; }
+.entry-content th { background-color: #1c1c1c; }
